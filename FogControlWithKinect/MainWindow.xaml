@@ -1,0 +1,97 @@
+﻿<Window x:Class="FogControlWithKinect.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FogControlWithKinect"
+        xmlns:utils="clr-namespace:FogControlWithKinect.Utils"
+        mc:Ignorable="d"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}"
+        Title="Fog Control With Kinect"
+        Height="240"
+        Width="400"
+        Loaded="Window_Loaded"
+        Closed="Window_Closed">
+    <Window.Resources>
+        <utils:BoolInverseConverter x:Key="Inverse"/>
+        
+        <Style x:Key="Header" TargetType="Label">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style x:Key="Status" TargetType="Label">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="8"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style TargetType="RadioButton">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Row="0" Grid.Column="0"
+                    IsEnabled="{Binding IsReady}">
+            <Label Style="{StaticResource Header}"
+                   Content="Method"/>
+            <Border BorderThickness="1"
+                    BorderBrush="#FF9A9A9A"
+                    Margin="8,0">
+                <StackPanel IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}">
+                    <RadioButton Name="rdbMethodTouch"
+                         GroupName="Method"
+                         Content="Touch"
+                         IsChecked="True"/>
+                    <RadioButton Name="rdbMethodTap"
+                         GroupName="Method"
+                         Content="Tap"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <StackPanel Grid.Row="0" Grid.Column="1"
+                    IsEnabled="{Binding IsReady}">
+            <Label Style="{StaticResource Header}"
+                   Content="Hand"/>
+            <Border BorderThickness="1"
+                    BorderBrush="#FF9A9A9A"
+                    Margin="8,0">
+                <StackPanel IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}">
+                    <RadioButton Name="rdbHandLeft"
+                                 GroupName="Hand"
+                                 Content="Left"/>
+                    <RadioButton Name="rdbHandRight"
+                                 GroupName="Hand"
+                                 Content="Right"
+                                 IsChecked="True"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <WrapPanel Grid.Row="1" Grid.ColumnSpan="2"
+                   HorizontalAlignment="Center">
+            <Button Name="btnStartStop"
+                    Content="Start"
+                    Width="100"
+                    Height="30"
+                    Margin="5"
+                    IsEnabled="{Binding IsReady}"
+                    Click="StartStop_Click"/>
+        </WrapPanel>
+
+        <Label Grid.Row="2" Grid.ColumnSpan="2"
+               Style="{StaticResource Status}"
+               Content="{Binding StatusText}"/>
+    </Grid>
+</Window>
