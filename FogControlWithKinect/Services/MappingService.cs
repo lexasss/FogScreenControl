@@ -6,6 +6,7 @@ namespace FogControlWithKinect.Services
     internal class MappingService
     {
         public bool IsReady { get; private set; } = false;
+        public double DistanceToScreen { get; private set; } = 2.15;
 
         public MappingService(string calibFileName)
         {
@@ -23,20 +24,23 @@ namespace FogControlWithKinect.Services
             }
         }
 
-        public bool Map(double x, double y, out System.Windows.Point result)
+        /// <summary>
+        /// Maps Kinect coordinates to screen coordinates.
+        /// </summary>
+        /// <param name="x">Kinect hand tip joint X coordinate</param>
+        /// <param name="y">Kinect hand tip joint Y coordinate</param>
+        /// <param name="result">The screen point</param>
+        public System.Windows.Point Map(double x, double y)
         {
             if (!IsReady)
             {
-                result = new System.Windows.Point(x, y);
-                return false;
+                return new System.Windows.Point(x, y);
             }
 
-            result = new System.Windows.Point(
+            return new System.Windows.Point(
                 (x - _offsetX) * _scaleX,
                 (y - _offsetY) * _scaleY
             );
-
-            return true;
         }
 
         // Internal
@@ -68,6 +72,10 @@ namespace FogControlWithKinect.Services
                         _calibPoints[pointIndex, 1] = double.Parse(p[1]);
                         _calibPoints[pointIndex, 2] = double.Parse(p[2]);
                         pointIndex++;
+                    }
+                    else if (line.Length > 0 && double.TryParse(line, out double distanceToScreen))
+                    {
+                        DistanceToScreen = distanceToScreen;
                     }
                 }
 

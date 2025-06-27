@@ -1,4 +1,7 @@
-﻿namespace FogControlWithKinect.Services
+﻿using System;
+using System.Media;
+
+namespace FogControlWithKinect.Services
 {
     internal enum InterationMethod
     {
@@ -8,37 +11,44 @@
 
     internal class MouseController
     {
-        public MouseController(InterationMethod method, double distanceToScreen, MappingService mapper, LowPassFilter filter)
+        public bool IsPlayingSoundOnEnterFog { get; set; } = false;
+
+        public MouseController(InterationMethod method, MappingService mapper, LowPassFilter filter)
         {
             _method = method;
-            _distanceToScreen = distanceToScreen;
             _mapper = mapper;
             _filter = filter;
 
             _screenHeight = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CYSCREEN);
+
+            try
+            {
+                _soundPlayer = new SoundPlayer("Assets/Sounds/sound.wav");
+                _soundPlayer.LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ERROR] Failed to load sound file: {ex.Message}");
+            }
         }
 
         public void SetPosition(double x, double y, double depth)
         {
-            if (depth < _distanceToScreen)
+            if (depth < _mapper.DistanceToScreen)
             {
-                if (_mapper.Map(x, y, out System.Windows.Point sp) == true)
-                {
-                    (x, y) = _filter.Filter(sp.X, sp.Y);
-                    SetPositionInsideFog((int)x, (int)y);
-                }
+                var screenPoint = _mapper.Map(x, y);
+                (x, y) = _filter.Filter(screenPoint.X, screenPoint.Y);
+                EnterFog((int)x, (int)y);
             }
             else
             {
-                SetPositionOutsideFog(_distanceToScreen - depth);
+                LeaveFog(_mapper.DistanceToScreen - depth);
                 _filter.Reset();
             }
         }
 
-        public void SetPositionInsideFog(int x, int y)
+        public void EnterFog(int x, int y)
         {
-            _isInteracting = true;
-
             if (_method == InterationMethod.Tap)
             {
                 if (y > 50 && y < (_screenHeight - 50)) // no need to apply these restrictions anymore
@@ -48,36 +58,35 @@
                     _x = x;
                     _y = y;
 
-                    if (!_isFingerInFog)
+                    if (!_isInteracting)
                     {
-                        _isFingerInFog = true;
+                        _isInteracting = true;
 
                         Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTDOWN, _x, _y, 0, 0);
-                        //PlaySoundA("sound.wav", NULL, SND_ASYNC);
+
+                        if (IsPlayingSoundOnEnterFog)
+                        {
+                            _soundPlayer.Play();
+                        }
                     }
                 }
             }
             else if (_method == InterationMethod.Touch)
             {
+                _isInteracting = true;
                 Utils.WinAPI.SetCursorPos(x, y);
             }
         }
 
-        public void SetPositionOutsideFog(double depth) // in front of fog
+        public void LeaveFog(double depth) // in front of fog
         {
             if (_method == InterationMethod.Tap)
             {
-                if (_isInteracting && depth < -0.05)    // 0.05 meters (to a user) is a threshold to avoid flickering
+                if (_isInteracting && depth < -0.05)    // the offset of 0.05 meters (towards a user) is a threshold to avoid flickering
                 {
                     _isInteracting = false;
 
-                    if (_isFingerInFog)
-                    {
-                        //PlaySoundA("sound.wav", NULL, SND_ASYNC);
-                        Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTUP, _x, _y, 0, 0);
-
-                        _isFingerInFog = false;
-                    }
+                    Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTUP, _x, _y, 0, 0);
                 }
             }
             else if (_method == InterationMethod.Touch)
@@ -89,13 +98,13 @@
         // Internal
 
         readonly InterationMethod _method;
-        readonly double _distanceToScreen;
         readonly MappingService _mapper;
         readonly LowPassFilter _filter;
         readonly int _screenHeight;
 
+        readonly SoundPlayer _soundPlayer = null;
+
         bool _isInteracting = false;
-        bool _isFingerInFog = false;
         int _x = 0;
         int _y = 0;
     }

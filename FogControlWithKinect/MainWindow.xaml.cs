@@ -12,20 +12,12 @@ namespace FogControlWithKinect
             set
             {
                 _isReady = value;
-                StatusText = _isReady ? "Kinect is available." : "Kinect is not available.";
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsReady)));
-            }
-        }
-
-        public string StatusText
-        {
-            get => _statusText;
-            set
-            {
-                _statusText = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusText)));
             }
         }
+
+        public string StatusText => _isReady ? "Kinect is connected." : "Kinect is not available.";
 
         public bool IsRunning
         {
@@ -34,16 +26,17 @@ namespace FogControlWithKinect
             {
                 _isRunning = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRunning)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StartInteractionButtonText)));
             }
         }
+
+        public string StartInteractionButtonText => _isRunning ? "Stop interaction" : "Start interaction";
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public MainWindow()
         {
             InitializeComponent();
-
-            StatusText = "Kinect is not available";
         }
 
         // Internal
@@ -56,10 +49,6 @@ namespace FogControlWithKinect
 
         bool _isReady = false;
         bool _isRunning = false;
-        string _statusText = "Kinect is not available";
-
-        double _distanceToScreen = 2.15; // meters, distance from Kinect to the screen
-
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -90,37 +79,43 @@ namespace FogControlWithKinect
             _handTipService?.Dispose();
         }
 
-        private void StartStop_Click(object sender, RoutedEventArgs e)
+        private void StartStopInteraction_Click(object sender, RoutedEventArgs e)
         {
             IsRunning = !IsRunning;
 
             if (IsRunning)
             {
-                var mapper = new Services.MappingService("last-calib.txt");
+                var mapper = new Services.MappingService(App.CalibrationFileName);
                 if (!mapper.IsReady)
                 {
-                    MessageBox.Show("Mapping service is not ready. Please calibrate the device first.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Kinect-to-screen mapping service is not ready. Please calibrate the device first.",
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     IsRunning = false;
                     return;
                 }
 
-                _mouseController = new Services.MouseController(rdbMethodTouch.IsChecked == true ?
-                    Services.InterationMethod.Touch : Services.InterationMethod.Tap,
-                    _distanceToScreen,
+                var interactionMethod = chkMouseDrag.IsChecked == true ? Services.InterationMethod.Tap : Services.InterationMethod.Touch;
+                var hand = chkHand.IsChecked == true ? Services.Hand.Right: Services.Hand.Left;
+
+                _mouseController = new Services.MouseController(
+                    interactionMethod,
                     mapper,
-                    _pointSmoother);
+                    _pointSmoother
+                );
 
-                _handTipService?.Start(rdbHandLeft.IsChecked == true ? Services.Hand.Left : Services.Hand.Right);
-
-                btnStartStop.Content = "Stop";
+                _handTipService?.Start(hand);
             }
             else
             {
                 _handTipService?.Stop();
                 _mouseController = null;
-
-                btnStartStop.Content = "Start";
             }
+        }
+
+        private void Calibrate_Click(object sender, RoutedEventArgs e)
+        {
+            var calibrationWindow = new CalibrationWindow(_handTipService);
+            calibrationWindow.ShowDialog();
         }
     }
 }

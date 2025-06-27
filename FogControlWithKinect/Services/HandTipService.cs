@@ -5,13 +5,13 @@ using System.Windows;
 
 namespace FogControlWithKinect.Services
 {
-    internal enum Hand
+    public enum Hand
     {
         Left,
         Right
     }
 
-    internal class HandTipService : IDisposable
+    public class HandTipService : IDisposable
     {
         public class TipLocationChangedEventArgs : EventArgs
         {
@@ -35,6 +35,7 @@ namespace FogControlWithKinect.Services
             _coordinateMapper = _kinectSensor.CoordinateMapper;
 
             _bodyFrameReader = _kinectSensor.BodyFrameSource.OpenReader();
+            _bodyFrameReader.FrameArrived += OnFrameArrived;
 
             _kinectSensor.Open();
         }
@@ -42,18 +43,18 @@ namespace FogControlWithKinect.Services
         public void Start(Hand hand)
         {
             _jointType = hand == Hand.Left ? JointType.HandTipLeft : JointType.HandTipRight;
-
-            _bodyFrameReader.FrameArrived += OnFrameArrived;
+            _isRunning = true;
         }
 
         public void Stop()
         {
-            _bodyFrameReader.FrameArrived -= OnFrameArrived;
+            _isRunning = false;
         }
 
         public void Dispose()
         {
-            _bodyFrameReader.FrameArrived -= OnFrameArrived;
+            Stop();
+
             _bodyFrameReader.Dispose();
             _kinectSensor.Close();
         }
@@ -66,12 +67,17 @@ namespace FogControlWithKinect.Services
         readonly CoordinateMapper _coordinateMapper;
         readonly BodyFrameReader _bodyFrameReader;
 
+        bool _isRunning = false;
+
         JointType _jointType = JointType.HandTipLeft;
 
         Body[] _bodies = null;
 
         private void OnFrameArrived(object sender, BodyFrameArrivedEventArgs e)
         {
+            if (!_isRunning)
+                return;
+
             bool dataReceived = false;
 
             using (BodyFrame bodyFrame = e.FrameReference.AcquireFrame())

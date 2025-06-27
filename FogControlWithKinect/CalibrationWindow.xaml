@@ -1,0 +1,83 @@
+﻿<Window x:Class="FogControlWithKinect.CalibrationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:services="clr-namespace:FogControlWithKinect.Services"
+        xmlns:utils="clr-namespace:FogControlWithKinect.Utils"
+        mc:Ignorable="d"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}"
+        Title="Calibration"
+        Height="360"
+        Width="360"
+        MinHeight="360"
+        MinWidth="360"
+        Background="White"
+        Icon="/Assets/Images/icon.png"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <utils:CalibrationPointToVisibilityConverter x:Key="CalibPoint2Visibility"/>
+        <utils:BoolInverseConverter x:Key="Inverted"/>
+
+        <Style x:Key="Target" TargetType="Ellipse">
+            <Setter Property="Width" Value="64"/>
+            <Setter Property="Height" Value="64"/>
+            <Setter Property="Margin" Value="8"/>
+            <Setter Property="Fill" Value="#C060AACC"/>
+        </Style>
+        <Style x:Key="Screen" TargetType="Rectangle">
+            <Setter Property="Margin" Value="40"/>
+            <Setter Property="Fill" Value="#60444444"/>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <Rectangle Grid.Row="0"
+                   Style="{StaticResource Screen}"
+                   HorizontalAlignment="Stretch"
+                   VerticalAlignment="Stretch"/>
+        <Ellipse x:Name="elpTopLeft" Grid.Row="0"
+                 Style="{StaticResource Target}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.TopLeft}}"
+                 HorizontalAlignment="Left"
+                 VerticalAlignment="Top"/>
+        <Ellipse x:Name="elpTopRight" Grid.Row="0"
+                 Style="{StaticResource Target}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.TopRight}}"
+                 HorizontalAlignment="Right"
+                 VerticalAlignment="Top"/>
+        <Ellipse x:Name="elpBottomRight" Grid.Row="0"
+                 Style="{StaticResource Target}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.BottomRight}}"
+                 HorizontalAlignment="Right"
+                 VerticalAlignment="Bottom"/>
+        <Ellipse x:Name="elpBottomLeft" Grid.Row="0"
+                 Style="{StaticResource Target}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.BottomLeft}}"
+                 HorizontalAlignment="Left"
+                 VerticalAlignment="Bottom"/>
+        <StackPanel Grid.Row="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <Label Content="Distance"/>
+            <TextBox Text="{Binding DistanceToScreen, Mode=TwoWay}"
+                     IsEnabled="{Binding IsCalibrating, Converter={StaticResource Inverted}}"/>
+        </StackPanel>
+
+        <WrapPanel x:Name="stpButtonContainer" Grid.Row="1"
+                    HorizontalAlignment="Center">
+            <Button Content="{Binding CalibrationButtonText, Mode=OneWay}"
+                    Margin="8"
+                    MinWidth="120"
+                    Click="StartStopCalibration_Click"/>
+            <Button Content="Close"
+                    Margin="8"
+                    MinWidth="120"
+                    IsCancel="True" Click="Close_Click"/>
+        </WrapPanel>
+    </Grid>
+</Window>

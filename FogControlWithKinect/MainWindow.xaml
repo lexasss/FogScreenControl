@@ -7,29 +7,30 @@
         xmlns:utils="clr-namespace:FogControlWithKinect.Utils"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
+        Style="{StaticResource MaterialDesignWindow}"
         Title="Fog Control With Kinect"
-        Height="240"
+        MinHeight="240"
+        MinWidth="320"
+        Height="250"
         Width="400"
         Loaded="Window_Loaded"
-        Closed="Window_Closed">
+        Closed="Window_Closed" Icon="/Assets/Images/icon.png">
     <Window.Resources>
         <utils:BoolInverseConverter x:Key="Inverse"/>
         
-        <Style x:Key="Header" TargetType="Label">
+        <Style x:Key="Header" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,8,0,0"/>
             <Setter Property="FontSize" Value="14"/>
         </Style>
-        <Style x:Key="Status" TargetType="Label">
+        <Style x:Key="Status" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="8"/>
+            <Setter Property="Margin" Value="12"/>
             <Setter Property="FontSize" Value="11"/>
-        </Style>
-        <Style TargetType="RadioButton">
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#FF444444"/>
         </Style>
     </Window.Resources>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>
@@ -44,51 +45,45 @@
         <StackPanel Grid.Row="0" Grid.Column="0"
                     IsEnabled="{Binding IsReady}">
             <Label Style="{StaticResource Header}"
-                   Content="Method"/>
-            <Border BorderThickness="1"
-                    BorderBrush="#FF9A9A9A"
-                    Margin="8,0">
-                <StackPanel IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}">
-                    <RadioButton Name="rdbMethodTouch"
-                         GroupName="Method"
-                         Content="Touch"
-                         IsChecked="True"/>
-                    <RadioButton Name="rdbMethodTap"
-                         GroupName="Method"
-                         Content="Tap"/>
-                </StackPanel>
-            </Border>
+                   Content="Mouse operations"/>
+            <StackPanel HorizontalAlignment="Center"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}">
+                <CheckBox IsEnabled="False"
+                          Content="Move"
+                          IsChecked="true"/>
+                <CheckBox x:Name="chkMouseDrag"
+                          Content="Click-n-Drag"
+                          Tag="Touch"
+                          IsChecked="True"/>
+            </StackPanel>
         </StackPanel>
 
         <StackPanel Grid.Row="0" Grid.Column="1"
                     IsEnabled="{Binding IsReady}">
             <Label Style="{StaticResource Header}"
                    Content="Hand"/>
-            <Border BorderThickness="1"
-                    BorderBrush="#FF9A9A9A"
-                    Margin="8,0">
-                <StackPanel IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}">
-                    <RadioButton Name="rdbHandLeft"
-                                 GroupName="Hand"
-                                 Content="Left"/>
-                    <RadioButton Name="rdbHandRight"
-                                 GroupName="Hand"
-                                 Content="Right"
-                                 IsChecked="True"/>
-                </StackPanel>
-            </Border>
+            <CheckBox x:Name="chkHand"
+                      Style="{StaticResource Switch}"
+                      IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}"
+                      Content="Right"
+                      Tag="Left"
+                      IsChecked="True"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Center"/>
         </StackPanel>
 
-        <WrapPanel Grid.Row="1" Grid.ColumnSpan="2"
-                   HorizontalAlignment="Center">
-            <Button Name="btnStartStop"
-                    Content="Start"
-                    Width="100"
-                    Height="30"
-                    Margin="5"
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2"
                     IsEnabled="{Binding IsReady}"
-                    Click="StartStop_Click"/>
-        </WrapPanel>
+                    HorizontalAlignment="Center">
+            <Button Content="{Binding StartInteractionButtonText, Mode=OneWay}"
+                    Width="160"
+                    Margin="5"
+                    Click="StartStopInteraction_Click"/>
+            <Button Content="Calibrate"
+                    IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}"
+                    Width="160"
+                    Margin="5" Click="Calibrate_Click"/>
+        </StackPanel>
 
         <Label Grid.Row="2" Grid.ColumnSpan="2"
                Style="{StaticResource Status}"
