@@ -52,6 +52,10 @@ namespace FogControlWithKinect
             set
             {
                 _distanceToScreen = value;
+                if (_skeletonPainter != null)
+                {
+                    _skeletonPainter.DistanceToScreen = _distanceToScreen;
+                }
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DistanceToScreen)));
             }
         }
@@ -63,7 +67,7 @@ namespace FogControlWithKinect
             if (IsCalibrating)
             {
                 _calibrationService = new CalibrationService(_distanceToScreen);
-                _handTipService.Start(Hand.Right);
+                _handTipService.Start(_hand);
 
                 _calibPointIndex = 0;
                 CalibrationPoint = _calibrationPoints[_calibPointIndex];
@@ -85,11 +89,12 @@ namespace FogControlWithKinect
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public CalibrationWindow(HandTipService handTipService)
+        public CalibrationWindow(HandTipService handTipService, Hand hand)
         {
             InitializeComponent();
 
             _handTipService = handTipService;
+            _hand = hand;
 
             MappingService mapper = new MappingService(App.CalibrationFileName);
             if (mapper.IsReady)
@@ -98,7 +103,7 @@ namespace FogControlWithKinect
             }
 
             var frameDescription = _handTipService.FrameDescription;
-            _skeletonPainter = new SkeletonPainter(frameDescription.Width, frameDescription.Height);
+            _skeletonPainter = new SkeletonPainter(frameDescription.Width, frameDescription.Height, _hand, _distanceToScreen);
 
             imgSkeleton.Source = _skeletonPainter.ImageSource;
 
@@ -126,6 +131,7 @@ namespace FogControlWithKinect
 
         readonly HandTipService _handTipService;
         readonly SkeletonPainter _skeletonPainter;
+        readonly Hand _hand;
 
         MouseController _mouseController = null;
         CalibrationService _calibrationService = null;
@@ -155,7 +161,7 @@ namespace FogControlWithKinect
 
         private void HandTipService_TipLocationChanged(object sender, HandTipService.TipLocationChangedEventArgs e)
         {
-            if (_calibrationService == null || _isVerifying)
+            if (_calibrationService == null)
                 return;
 
             Dispatcher.Invoke(() =>

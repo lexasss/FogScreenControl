@@ -31,6 +31,8 @@ namespace FogControlWithKinect.Services
             }
         }
 
+        public static JointType HandToTipJoint(Hand hand) =>hand == Hand.Left ? JointType.HandTipLeft : JointType.HandTipRight;
+
         public bool IsAvailable => _kinectSensor.IsAvailable;
 
         public FrameDescription FrameDescription => _kinectSensor.DepthFrameSource.FrameDescription;
@@ -57,7 +59,7 @@ namespace FogControlWithKinect.Services
 
         public void Start(Hand hand)
         {
-            _jointType = hand == Hand.Left ? JointType.HandTipLeft : JointType.HandTipRight;
+            _jointType = HandToTipJoint(hand);
             _isRunning = true;
         }
 

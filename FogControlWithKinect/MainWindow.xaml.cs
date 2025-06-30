@@ -8,6 +8,19 @@ namespace FogControlWithKinect
 
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        public bool IsHandRight
+        {
+            get => _hand == Services.Hand.Right;
+            set
+            {
+                _hand = value ? Services.Hand.Right : Services.Hand.Left;
+                if (_skeletonPainter != null)
+                {
+                    _skeletonPainter.Hand = _hand;
+                }
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsHandRight)));
+            }
+        }
         public bool IsReady
         {
             get => _isReady;
@@ -70,7 +83,7 @@ namespace FogControlWithKinect
 
         public ICommand CalibrateCommand => new DelegateCommand(() =>
         {
-            var calibrationWindow = new CalibrationWindow(_handTipService);
+            var calibrationWindow = new CalibrationWindow(_handTipService, _hand);
 
             _isCalibrating = true;
             calibrationWindow.ShowDialog();
@@ -89,6 +102,8 @@ namespace FogControlWithKinect
         Services.HandTipService _handTipService = null;
         Services.MouseController _mouseController = null;
         Services.SkeletonPainter _skeletonPainter = null;
+
+        Services.Hand _hand = Services.Hand.Right;
 
         bool _isReady = false;
         bool _isRunning = false;
@@ -129,7 +144,8 @@ namespace FogControlWithKinect
             });
 
             var frameDescription = _handTipService.FrameDescription;
-            _skeletonPainter = new Services.SkeletonPainter(frameDescription.Width, frameDescription.Height);
+            var hand = chkHand.IsChecked == true ? Services.Hand.Right : Services.Hand.Left;
+            _skeletonPainter = new Services.SkeletonPainter(frameDescription.Width, frameDescription.Height, hand);
 
             imgSkeleton.Source = _skeletonPainter.ImageSource;
         }

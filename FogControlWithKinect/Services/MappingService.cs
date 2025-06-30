@@ -41,7 +41,7 @@ namespace FogControlWithKinect.Services
         /// </summary>
         /// <param name="x">Kinect hand tip joint X coordinate</param>
         /// <param name="y">Kinect hand tip joint Y coordinate</param>
-        /// <param name="result">The screen point</param>
+        /// <return>The screen point</return>
         public System.Windows.Point Map(double x, double y)
         {
             if (!IsReady)

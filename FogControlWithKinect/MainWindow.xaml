@@ -69,7 +69,7 @@
                       IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
                       Content="Right"
                       Tag="Left"
-                      IsChecked="True"
+                      IsChecked="{Binding IsHandRight}"
                       HorizontalAlignment="Stretch"
                       HorizontalContentAlignment="Center"/>
         </StackPanel>

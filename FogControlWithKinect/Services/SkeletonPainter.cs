@@ -1,5 +1,4 @@
-﻿using MathNet.Numerics.RootFinding;
-using Microsoft.Kinect;
+﻿using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -10,12 +9,19 @@ namespace FogControlWithKinect.Services
     internal class SkeletonPainter
     {
         /// <summary>
-        /// Image sour ce to be bound to a WPF Image control.
+        /// Image source to be bound to a WPF Image control.
         /// </summary>
         public DrawingImage ImageSource { get; }
 
-        public SkeletonPainter(int displayWidth, int displayHeight)
+        public double? DistanceToScreen { get; set; }
+
+        public Hand Hand { get; set; }
+
+        public SkeletonPainter(int displayWidth, int displayHeight, Hand hand, double? distanceToScreen = null)
         {
+            DistanceToScreen = distanceToScreen;
+            Hand = hand;
+
             _displayWidth = displayWidth;
             _displayHeight = displayHeight;
             _rect = new Rect(0.0, 0.0, _displayWidth, _displayHeight);
@@ -71,8 +77,11 @@ namespace FogControlWithKinect.Services
 
                     DrawBody(body.Joints, screenJointPoints, dc, drawPen);
 
-                    DrawHand(body.HandLeftState, screenJointPoints[JointType.HandLeft], dc);
-                    DrawHand(body.HandRightState, screenJointPoints[JointType.HandRight], dc);
+                    var handTipJointType = HandTipService.HandToTipJoint(Hand);
+                    if (handTipJointType == JointType.HandTipLeft)
+                        DrawHand(screenJointPoints[JointType.HandTipLeft], body.Joints[JointType.HandTipLeft].Position, dc);
+                    else
+                        DrawHand(screenJointPoints[JointType.HandTipRight], body.Joints[JointType.HandTipRight].Position, dc);
                 }
 
                 // prevent drawing outside of our render area
@@ -83,23 +92,19 @@ namespace FogControlWithKinect.Services
         // Internal
 
         const double HandSize = 30;
+        const double HandSizeScale = 100;
         const double BoneThickness = 6;
         const double JointThickness = 3;
         const double ClipBoundsThickness = 10;
         const float InferredZPositionClamp = 0.1f;
 
-        readonly Brush _handClosedBrush = new SolidColorBrush(Color.FromArgb(128, 255, 0, 0));
-        readonly Brush _handOpenBrush = new SolidColorBrush(Color.FromArgb(128, 0, 255, 0));
-        readonly Brush _handLassoBrush = new SolidColorBrush(Color.FromArgb(128, 0, 0, 255));
+        readonly Brush _handInsideBrush = new SolidColorBrush(Color.FromArgb(128, 0, 255, 0));
+        readonly Brush _handOutsideBrush = new SolidColorBrush(Color.FromArgb(128, 255, 128, 0));
         readonly Brush _trackedJointBrush = new SolidColorBrush(Color.FromArgb(255, 68, 192, 68));
         readonly Brush _inferredJointBrush = Brushes.Yellow;
         readonly Pen _inferredBonePen = new Pen(Brushes.Gray, 1);
 
-        readonly int _displayHeight;
-        readonly int _displayWidth;
-        readonly Rect _rect;
-
-        List<Tuple<JointType, JointType>> _bones = new List<Tuple<JointType, JointType>>()
+        readonly List<Tuple<JointType, JointType>> _bones = new List<Tuple<JointType, JointType>>()
         {
             // Torso
             new Tuple<JointType, JointType>(JointType.Head, JointType.Neck),
@@ -114,16 +119,22 @@ namespace FogControlWithKinect.Services
             // Right Arm
             new Tuple<JointType, JointType>(JointType.ShoulderRight, JointType.ElbowRight),
             new Tuple<JointType, JointType>(JointType.ElbowRight, JointType.WristRight),
+            /* Original
             new Tuple<JointType, JointType>(JointType.WristRight, JointType.HandRight),
             new Tuple<JointType, JointType>(JointType.HandRight, JointType.HandTipRight),
             new Tuple<JointType, JointType>(JointType.WristRight, JointType.ThumbRight),
+            */
+            new Tuple<JointType, JointType>(JointType.WristRight, JointType.HandTipRight),
 
             // Left Arm
             new Tuple<JointType, JointType>(JointType.ShoulderLeft, JointType.ElbowLeft),
             new Tuple<JointType, JointType>(JointType.ElbowLeft, JointType.WristLeft),
+            /* Original
             new Tuple<JointType, JointType>(JointType.WristLeft, JointType.HandLeft),
             new Tuple<JointType, JointType>(JointType.HandLeft, JointType.HandTipLeft),
             new Tuple<JointType, JointType>(JointType.WristLeft, JointType.ThumbLeft),
+            */
+            new Tuple<JointType, JointType>(JointType.WristLeft, JointType.HandTipLeft),
 
             // Right Leg
             new Tuple<JointType, JointType>(JointType.HipRight, JointType.KneeRight),
@@ -136,7 +147,7 @@ namespace FogControlWithKinect.Services
             new Tuple<JointType, JointType>(JointType.AnkleLeft, JointType.FootLeft)
         };
 
-        List<Pen> _bodyColors = new List<Pen>()
+        readonly List<Pen> _bodyColors = new List<Pen>()
         {
             new Pen(Brushes.Red, BoneThickness),
             new Pen(Brushes.Orange, BoneThickness),
@@ -146,7 +157,11 @@ namespace FogControlWithKinect.Services
             new Pen(Brushes.Violet, BoneThickness)
         };
 
-        DrawingGroup _drawingGroup;
+        readonly DrawingGroup _drawingGroup;
+
+        readonly int _displayHeight;
+        readonly int _displayWidth;
+        readonly Rect _rect;
 
         /// <summary>
         /// Draws a body
@@ -155,7 +170,8 @@ namespace FogControlWithKinect.Services
         /// <param name="jointPoints">translated positions of joints to draw</param>
         /// <param name="drawingContext">drawing context to draw to</param>
         /// <param name="drawingPen">specifies color to draw a specific body</param>
-        private void DrawBody(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, Point> jointPoints, DrawingContext drawingContext, Pen drawingPen)
+        private void DrawBody(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, Point> jointPoints,
+            DrawingContext drawingContext, Pen drawingPen)
         {
             // Draw the bones
             foreach (var bone in _bones)
@@ -166,6 +182,10 @@ namespace FogControlWithKinect.Services
             // Draw the joints
             foreach (JointType jointType in joints.Keys)
             {
+                if (jointType == JointType.ThumbLeft || jointType == JointType.ThumbRight ||
+                    jointType == JointType.HandLeft || jointType == JointType.HandRight)
+                    continue; // Skip thumbs and palms
+
                 Brush drawBrush = null;
 
                 TrackingState trackingState = joints[jointType].TrackingState;
@@ -186,27 +206,21 @@ namespace FogControlWithKinect.Services
             }
         }
 
-        /// <summary>
-        /// Draws a hand symbol if the hand is tracked: red circle = closed, green circle = opened; blue circle = lasso
-        /// </summary>
-        /// <param name="handState">state of the hand</param>
-        /// <param name="handPosition">position of the hand</param>
-        /// <param name="drawingContext">drawing context to draw to</param>
-        private void DrawHand(HandState handState, Point handPosition, DrawingContext drawingContext)
+        private void DrawHand(Point handPosition, CameraSpacePoint camPosition, DrawingContext drawingContext)
         {
-            switch (handState)
+            if (DistanceToScreen != null)
             {
-                case HandState.Closed:
-                    drawingContext.DrawEllipse(_handClosedBrush, null, handPosition, HandSize, HandSize);
-                    break;
+                double size = Math.Min(
+                    HandSize,
+                    Math.Abs(camPosition.Z - DistanceToScreen ?? 0) * HandSizeScale + 5
+                );
+                Brush brush = camPosition.Z > DistanceToScreen ? _handOutsideBrush : _handInsideBrush;
 
-                case HandState.Open:
-                    drawingContext.DrawEllipse(_handOpenBrush, null, handPosition, HandSize, HandSize);
-                    break;
-
-                case HandState.Lasso:
-                    drawingContext.DrawEllipse(_handLassoBrush, null, handPosition, HandSize, HandSize);
-                    break;
+                drawingContext.DrawEllipse(brush, null, handPosition, size, size);
+            }
+            else
+            {
+                drawingContext.DrawEllipse(_handOutsideBrush, null, handPosition, HandSize, HandSize);
             }
         }
 
@@ -219,7 +233,8 @@ namespace FogControlWithKinect.Services
         /// <param name="jointType1">second joint of bone to draw</param>
         /// <param name="drawingContext">drawing context to draw to</param>
         /// /// <param name="drawingPen">specifies color to draw a specific bone</param>
-        private void DrawBone(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, Point> jointPoints, JointType jointType0, JointType jointType1, DrawingContext drawingContext, Pen drawingPen)
+        private void DrawBone(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, Point> jointPoints,
+            JointType jointType0, JointType jointType1, DrawingContext drawingContext, Pen drawingPen)
         {
             Joint joint0 = joints[jointType0];
             Joint joint1 = joints[jointType1];
