@@ -71,12 +71,15 @@ namespace FogControlWithKinect
                     App.PointSmoother
                 );
 
+                _skeletonPainter.DistanceToScreen = mapper.DistanceToScreen;
+
                 _handTipService?.Start(hand);
             }
             else
             {
                 _handTipService?.Stop();
                 _skeletonPainter?.Clear();
+                _skeletonPainter.DistanceToScreen = null;
                 _mouseController = null;
             }
         });

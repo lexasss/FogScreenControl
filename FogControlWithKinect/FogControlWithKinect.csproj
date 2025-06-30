@@ -117,6 +117,8 @@
     <Compile Include="Services\CalibrationService.cs" />
     <Compile Include="Services\HandTipService.cs" />
     <Compile Include="Services\LowPassFilter.cs" />
+    <Compile Include="Services\Mappers\IMapper.cs" />
+    <Compile Include="Services\Mappers\NaiveMapper.cs" />
     <Compile Include="Services\MappingService.cs" />
     <Compile Include="Services\MouseController.cs" />
     <Compile Include="Services\SkeletonPainter.cs" />

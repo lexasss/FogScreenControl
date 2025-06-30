@@ -29,7 +29,7 @@ namespace FogControlWithKinect.Services
         };
 
         public double DistanceToScreen => _distanceToScreen;
-        public double[,] Points => _calibPoints;
+        public double[,] TrackerPoints => _calibPoints;
 
 
         public CalibrationService(double distanceToScreen)
