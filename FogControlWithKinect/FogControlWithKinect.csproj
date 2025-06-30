@@ -40,6 +40,12 @@
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DevExpress.Mvvm, Version=24.1.0.0, Culture=neutral, PublicKeyToken=382ad28f6ae31f30, processorArchitecture=MSIL">
+      <HintPath>..\packages\DevExpressMvvm.24.1.6\lib\net462\DevExpress.Mvvm.dll</HintPath>
+    </Reference>
+    <Reference Include="DevExpress.Mvvm.UI, Version=24.1.0.0, Culture=neutral, PublicKeyToken=382ad28f6ae31f30, processorArchitecture=MSIL">
+      <HintPath>..\packages\DevExpressMvvm.24.1.6\lib\net462\DevExpress.Mvvm.UI.dll</HintPath>
+    </Reference>
     <Reference Include="MaterialDesignColors, Version=5.2.2.0, Culture=neutral, PublicKeyToken=df2a72020bd7962a, processorArchitecture=MSIL">
       <HintPath>..\packages\MaterialDesignColors.5.2.2-ci998\lib\net462\MaterialDesignColors.dll</HintPath>
     </Reference>
@@ -85,6 +91,7 @@
     <Compile Include="Services\LowPassFilter.cs" />
     <Compile Include="Services\MappingService.cs" />
     <Compile Include="Services\MouseController.cs" />
+    <Compile Include="Services\SkeletonPainter.cs" />
     <Compile Include="Utils\WinAPI.cs" />
     <Page Include="CalibrationWindow.xaml">
       <SubType>Designer</SubType>

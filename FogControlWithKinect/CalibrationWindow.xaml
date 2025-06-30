@@ -3,81 +3,117 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
         xmlns:services="clr-namespace:FogControlWithKinect.Services"
         xmlns:utils="clr-namespace:FogControlWithKinect.Utils"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="Calibration"
+        Title="Kinect-to-fogscreen calibration"
         Height="360"
         Width="360"
         MinHeight="360"
         MinWidth="360"
-        Background="White"
+        Background="Black"
         Icon="/Assets/Images/icon.png"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <utils:CalibrationPointToVisibilityConverter x:Key="CalibPoint2Visibility"/>
-        <utils:BoolInverseConverter x:Key="Inverted"/>
+        <dxmvvm:BooleanNegationConverter x:Key="Inverted"/>
+        <dxmvvm:BooleanToVisibilityConverter x:Key="Bool2InvVisivility" Inverse="True"/>
 
         <Style x:Key="Target" TargetType="Ellipse">
             <Setter Property="Width" Value="64"/>
             <Setter Property="Height" Value="64"/>
-            <Setter Property="Margin" Value="8"/>
             <Setter Property="Fill" Value="#C060AACC"/>
+            <Setter Property="Stroke" Value="#FF60AACC"/>
+            <Setter Property="StrokeThickness" Value="3"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         </Style>
-        <Style x:Key="Screen" TargetType="Rectangle">
-            <Setter Property="Margin" Value="40"/>
-            <Setter Property="Fill" Value="#60444444"/>
+        <Style x:Key="Control" TargetType="StackPanel">
+            <Setter Property="Background" Value="#8044BBFF"/>
+            <Setter Property="Width" Value="120"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
     </Window.Resources>
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        
-        <Rectangle Grid.Row="0"
-                   Style="{StaticResource Screen}"
-                   HorizontalAlignment="Stretch"
-                   VerticalAlignment="Stretch"/>
         <Ellipse x:Name="elpTopLeft" Grid.Row="0"
                  Style="{StaticResource Target}"
                  Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.TopLeft}}"
                  HorizontalAlignment="Left"
-                 VerticalAlignment="Top"/>
+                 VerticalAlignment="Top">
+            <Ellipse.RenderTransform>
+                <TransformGroup>
+                    <TranslateTransform X="-32" Y="-32"/>
+                </TransformGroup>
+            </Ellipse.RenderTransform>
+        </Ellipse>
         <Ellipse x:Name="elpTopRight" Grid.Row="0"
                  Style="{StaticResource Target}"
                  Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.TopRight}}"
                  HorizontalAlignment="Right"
-                 VerticalAlignment="Top"/>
+                 VerticalAlignment="Top">
+            <Ellipse.RenderTransform>
+                <TransformGroup>
+                    <TranslateTransform X="32" Y="-32"/>
+                </TransformGroup>
+            </Ellipse.RenderTransform>
+        </Ellipse>
+        <Ellipse x:Name="elpBottomLeft"
+                 Style="{StaticResource Target}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.BottomLeft}}"
+                 HorizontalAlignment="Left"
+                 VerticalAlignment="Bottom">
+            <Ellipse.RenderTransform>
+                <TransformGroup>
+                    <TranslateTransform X="-32" Y="32"/>
+                </TransformGroup>
+            </Ellipse.RenderTransform>
+        </Ellipse>
         <Ellipse x:Name="elpBottomRight" Grid.Row="0"
                  Style="{StaticResource Target}"
                  Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.BottomRight}}"
                  HorizontalAlignment="Right"
-                 VerticalAlignment="Bottom"/>
-        <Ellipse x:Name="elpBottomLeft" Grid.Row="0"
-                 Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.BottomLeft}}"
-                 HorizontalAlignment="Left"
-                 VerticalAlignment="Bottom"/>
-        <StackPanel Grid.Row="0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-            <Label Content="Distance"/>
+                 VerticalAlignment="Bottom">
+            <Ellipse.RenderTransform>
+                <TransformGroup>
+                    <TranslateTransform X="32" Y="32"/>
+                </TransformGroup>
+            </Ellipse.RenderTransform>
+        </Ellipse>
+
+        <Viewbox Margin="64"
+                 HorizontalAlignment="Center">
+            <Image x:Name="imgSkeleton" Stretch="UniformToFill"/>
+        </Viewbox>
+
+        <StackPanel Style="{StaticResource Control}"
+                    Visibility="{Binding IsCalibrating, Converter={StaticResource Bool2InvVisivility}}">
+            <Label Content="Distance"
+                   Foreground="White"
+                   HorizontalAlignment="Center"/>
             <TextBox Text="{Binding DistanceToScreen, Mode=TwoWay}"
+                     HorizontalAlignment="Center"
+                     HorizontalContentAlignment="Center"
+                     Foreground="White"
+                     FontSize="16"
+                     Width="62"
+                     CaretBrush="AliceBlue"
                      IsEnabled="{Binding IsCalibrating, Converter={StaticResource Inverted}}"/>
         </StackPanel>
 
-        <WrapPanel x:Name="stpButtonContainer" Grid.Row="1"
-                    HorizontalAlignment="Center">
+        <WrapPanel x:Name="stpButtonContainer"
+                    HorizontalAlignment="Center"
+                   VerticalAlignment="Bottom">
             <Button Content="{Binding CalibrationButtonText, Mode=OneWay}"
+                    Command="{Binding ToggleCalibrationCommand}"
                     Margin="8"
-                    MinWidth="120"
-                    Click="StartStopCalibration_Click"/>
+                    MinWidth="120"/>
             <Button Content="Close"
+                    Command="{Binding CloseCommand}"
                     Margin="8"
                     MinWidth="120"
-                    IsCancel="True" Click="Close_Click"/>
+                    IsCancel="True"/>
         </WrapPanel>
     </Grid>
 </Window>

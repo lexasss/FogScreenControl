@@ -2,7 +2,7 @@
 
 namespace FogControlWithKinect.Services
 {
-    internal class LowPassFilter
+    public class LowPassFilter
     {
         public LowPassFilter(double t, double interval)
         {

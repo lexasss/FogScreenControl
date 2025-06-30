@@ -3,20 +3,21 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
         xmlns:local="clr-namespace:FogControlWithKinect"
         xmlns:utils="clr-namespace:FogControlWithKinect.Utils"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Style="{StaticResource MaterialDesignWindow}"
         Title="Fog Control With Kinect"
-        MinHeight="240"
+        MinHeight="496"
         MinWidth="320"
-        Height="250"
+        Height="520"
         Width="400"
         Loaded="Window_Loaded"
         Closed="Window_Closed" Icon="/Assets/Images/icon.png">
     <Window.Resources>
-        <utils:BoolInverseConverter x:Key="Inverse"/>
+        <dxmvvm:BooleanNegationConverter x:Key="Inverted"/>
         
         <Style x:Key="Header" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -33,6 +34,7 @@
     
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -47,7 +49,7 @@
             <Label Style="{StaticResource Header}"
                    Content="Mouse operations"/>
             <StackPanel HorizontalAlignment="Center"
-                        IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}">
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}">
                 <CheckBox IsEnabled="False"
                           Content="Move"
                           IsChecked="true"/>
@@ -64,7 +66,7 @@
                    Content="Hand"/>
             <CheckBox x:Name="chkHand"
                       Style="{StaticResource Switch}"
-                      IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}"
+                      IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
                       Content="Right"
                       Tag="Left"
                       IsChecked="True"
@@ -72,20 +74,27 @@
                       HorizontalContentAlignment="Center"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="1" Grid.ColumnSpan="2"
+        <Viewbox Grid.Row="1" Grid.ColumnSpan="2"
+                 Margin="12"
+                 HorizontalAlignment="Center">
+            <Image x:Name="imgSkeleton" Stretch="UniformToFill"/>
+        </Viewbox>
+
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2"
                     IsEnabled="{Binding IsReady}"
                     HorizontalAlignment="Center">
-            <Button Content="{Binding StartInteractionButtonText, Mode=OneWay}"
+            <Button Content="{Binding ToggleInteractionButtonText, Mode=OneWay}"
+                    Command="{Binding ToggleInteractionCommand}"
                     Width="160"
-                    Margin="5"
-                    Click="StartStopInteraction_Click"/>
+                    Margin="5"/>
             <Button Content="Calibrate"
-                    IsEnabled="{Binding IsRunning, Converter={StaticResource Inverse}}"
+                    IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
+                    Command="{Binding CalibrateCommand}"
                     Width="160"
-                    Margin="5" Click="Calibrate_Click"/>
+                    Margin="5"/>
         </StackPanel>
 
-        <Label Grid.Row="2" Grid.ColumnSpan="2"
+        <Label Grid.Row="3" Grid.ColumnSpan="2"
                Style="{StaticResource Status}"
                Content="{Binding StatusText}"/>
     </Grid>

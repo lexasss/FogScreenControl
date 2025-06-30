@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using DevExpress.Mvvm;
+using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
 
 namespace FogControlWithKinect
 {
@@ -26,11 +28,54 @@ namespace FogControlWithKinect
             {
                 _isRunning = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsRunning)));
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StartInteractionButtonText)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ToggleInteractionButtonText)));
             }
         }
 
-        public string StartInteractionButtonText => _isRunning ? "Stop interaction" : "Start interaction";
+        public string ToggleInteractionButtonText => _isRunning ? "Stop interaction" : "Start interaction";
+
+        public ICommand ToggleInteractionCommand => new DelegateCommand(() =>
+        {
+            IsRunning = !IsRunning;
+
+            if (IsRunning)
+            {
+                var mapper = new Services.MappingService(App.CalibrationFileName);
+                if (!mapper.IsReady)
+                {
+                    MessageBox.Show("Kinect-to-screen mapping is not available. Please calibrate the device first.",
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    IsRunning = false;
+                    return;
+                }
+
+                var interactionMethod = chkMouseDrag.IsChecked == true ? Services.InterationMethod.Tap : Services.InterationMethod.Touch;
+                var hand = chkHand.IsChecked == true ? Services.Hand.Right : Services.Hand.Left;
+
+                _mouseController = new Services.MouseController(
+                    interactionMethod,
+                    mapper,
+                    App.PointSmoother
+                );
+
+                _handTipService?.Start(hand);
+            }
+            else
+            {
+                _handTipService?.Stop();
+                _skeletonPainter?.Clear();
+                _mouseController = null;
+            }
+        });
+
+        public ICommand CalibrateCommand => new DelegateCommand(() =>
+        {
+            var calibrationWindow = new CalibrationWindow(_handTipService);
+
+            _isCalibrating = true;
+            calibrationWindow.ShowDialog();
+            _isCalibrating = false;
+        });
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -41,14 +86,13 @@ namespace FogControlWithKinect
 
         // Internal
 
-        readonly Services.LowPassFilter _pointSmoother = new Services.LowPassFilter(200, 33);
-        readonly Services.LowPassFilter _depthSmoother = new Services.LowPassFilter(70, 33);
-
         Services.HandTipService _handTipService = null;
         Services.MouseController _mouseController = null;
+        Services.SkeletonPainter _skeletonPainter = null;
 
         bool _isReady = false;
         bool _isRunning = false;
+        bool _isCalibrating = false;
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -65,57 +109,34 @@ namespace FogControlWithKinect
 
             _handTipService.TipLocationChanged += (s, args) => Dispatcher.Invoke(() =>
             {
-                double depth = _depthSmoother.Filter(args.Location.Z);
+                if (_isCalibrating)
+                    return;
+
+                double depth = App.DepthSmoother.Filter(args.Location.Z);
                 _mouseController?.SetPosition(
                     args.Location.X,
                     args.Location.Y,
                     depth
                 );
             });
+
+            _handTipService.FrameArrived += (s, args) => Dispatcher.Invoke(() =>
+            {
+                if (_isCalibrating)
+                    return;
+
+                _skeletonPainter?.Draw(args.Bodies, (pt) => _handTipService.MapPoint(pt));
+            });
+
+            var frameDescription = _handTipService.FrameDescription;
+            _skeletonPainter = new Services.SkeletonPainter(frameDescription.Width, frameDescription.Height);
+
+            imgSkeleton.Source = _skeletonPainter.ImageSource;
         }
 
         private void Window_Closed(object sender, System.EventArgs e)
         {
             _handTipService?.Dispose();
-        }
-
-        private void StartStopInteraction_Click(object sender, RoutedEventArgs e)
-        {
-            IsRunning = !IsRunning;
-
-            if (IsRunning)
-            {
-                var mapper = new Services.MappingService(App.CalibrationFileName);
-                if (!mapper.IsReady)
-                {
-                    MessageBox.Show("Kinect-to-screen mapping service is not ready. Please calibrate the device first.",
-                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    IsRunning = false;
-                    return;
-                }
-
-                var interactionMethod = chkMouseDrag.IsChecked == true ? Services.InterationMethod.Tap : Services.InterationMethod.Touch;
-                var hand = chkHand.IsChecked == true ? Services.Hand.Right: Services.Hand.Left;
-
-                _mouseController = new Services.MouseController(
-                    interactionMethod,
-                    mapper,
-                    _pointSmoother
-                );
-
-                _handTipService?.Start(hand);
-            }
-            else
-            {
-                _handTipService?.Stop();
-                _mouseController = null;
-            }
-        }
-
-        private void Calibrate_Click(object sender, RoutedEventArgs e)
-        {
-            var calibrationWindow = new CalibrationWindow(_handTipService);
-            calibrationWindow.ShowDialog();
         }
     }
 }

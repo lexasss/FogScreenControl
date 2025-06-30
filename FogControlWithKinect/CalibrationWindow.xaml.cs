@@ -1,6 +1,9 @@
-﻿using FogControlWithKinect.Services;
+﻿using DevExpress.Mvvm;
+using FogControlWithKinect.Services;
+using System;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
 
 namespace FogControlWithKinect
 {
@@ -53,81 +56,7 @@ namespace FogControlWithKinect
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public CalibrationWindow(HandTipService handTipService)
-        {
-            InitializeComponent();
-
-            _handTipService = handTipService;
-            _handTipService.TipLocationChanged += OnHandData;
-
-            MappingService mapper = new Services.MappingService(App.CalibrationFileName);
-            if (mapper.IsReady)
-            {
-                DistanceToScreen = mapper.DistanceToScreen;
-            }
-        }
-
-        // Internal
-
-        readonly CalibrationPoint[] _calibrationPoints = new[]
-        {
-            CalibrationPoint.TopLeft,
-            CalibrationPoint.TopRight,
-            CalibrationPoint.BottomRight,
-            CalibrationPoint.BottomLeft,
-        };
-
-        readonly HandTipService _handTipService;
-
-        CalibrationService _calibrationService = null;
-        CalibrationPoint _calibrationPoint = CalibrationPoint.Undefined;
-        
-        bool _isCalibrating = false;
-        int _calibPointIndex = -1;
-        double _distanceToScreen = 2.15; // Default distance to screen in meters
-
-        private void OnHandData(object sender, HandTipService.TipLocationChangedEventArgs e)
-        {
-            if (_calibrationService == null)
-            {
-                return;
-            }
-
-            Dispatcher.Invoke(() =>
-            {
-                var cameraPoint = e.Location;
-                var result = _calibrationService?.Feed(cameraPoint);
-                if (result == CalibrationService.Event.PointStart)
-                {
-                }
-                else if (result == CalibrationService.Event.PointEnd)
-                {
-                    CalibrationPoint = ++_calibPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT
-                        ? _calibrationPoints[_calibPointIndex]
-                        : CalibrationPoint.Undefined;
-                }
-                else if (result == CalibrationService.Event.Finished)
-                {
-                    IsCalibrating = false;
-                    _handTipService.Stop();
-
-                    try
-                    {
-                        _calibrationService?.SaveToFile(App.CalibrationFileName);
-                    }
-                    catch (System.Exception ex)
-                    {
-                        MessageBox.Show($"Failed to save calibration data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-
-                    _calibrationService = null;
-                }
-            });
-        }
-
-        private void StartStopCalibration_Click(object sender, RoutedEventArgs e)
+        public ICommand ToggleCalibrationCommand => new DelegateCommand(() =>
         {
             IsCalibrating = !IsCalibrating;
 
@@ -144,12 +73,142 @@ namespace FogControlWithKinect
                 _handTipService.Stop();
                 _calibrationService = null;
             }
-        }
+        });
 
-        private void Close_Click(object sender, RoutedEventArgs e)
+        public ICommand CloseCommand => new DelegateCommand(() =>
         {
             _handTipService.Stop();
             _calibrationService = null;
+
+            DialogResult = false;
+        });
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public CalibrationWindow(HandTipService handTipService)
+        {
+            InitializeComponent();
+
+            _handTipService = handTipService;
+
+            MappingService mapper = new MappingService(App.CalibrationFileName);
+            if (mapper.IsReady)
+            {
+                DistanceToScreen = mapper.DistanceToScreen;
+            }
+
+            var frameDescription = _handTipService.FrameDescription;
+            _skeletonPainter = new SkeletonPainter(frameDescription.Width, frameDescription.Height);
+
+            imgSkeleton.Source = _skeletonPainter.ImageSource;
+
+            _handTipService.FrameArrived += HandTipService_FrameArrived;
+            _handTipService.TipLocationChanged += HandTipService_TipLocationChanged;
+        }
+
+        private void HandTipService_FrameArrived(object sender, HandTipService.FrameArrivedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                _skeletonPainter.Draw(e.Bodies, (pt) => _handTipService.MapPoint(pt));
+            });
+        }
+
+        // Internal
+
+        readonly CalibrationPoint[] _calibrationPoints = new[]
+        {
+            CalibrationPoint.TopLeft,
+            CalibrationPoint.TopRight,
+            CalibrationPoint.BottomLeft,
+            CalibrationPoint.BottomRight,
+        };
+
+        readonly HandTipService _handTipService;
+        readonly SkeletonPainter _skeletonPainter;
+
+        MouseController _mouseController = null;
+        CalibrationService _calibrationService = null;
+        CalibrationPoint _calibrationPoint = CalibrationPoint.Undefined;
+
+        bool _isCalibrating = false;
+        bool _isVerifying = false;
+        int _calibPointIndex = -1;
+        double _distanceToScreen = 2.15; // Default distance to screen in meters
+
+        public bool VerifyCalibration()
+        {
+            _mouseController = new MouseController(
+                InterationMethod.Touch,
+                new MappingService(_calibrationService),
+                App.PointSmoother
+            );
+
+            _isVerifying = true;
+
+            var result = MessageBox.Show("Is the calibration accurate?", "Calibration Verification", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            _isVerifying = false;
+
+            return result == MessageBoxResult.Yes;
+        }
+
+        private void HandTipService_TipLocationChanged(object sender, HandTipService.TipLocationChangedEventArgs e)
+        {
+            if (_calibrationService == null || _isVerifying)
+                return;
+
+            Dispatcher.Invoke(() =>
+            {
+                if (_isVerifying)
+                {
+                    double depth = App.DepthSmoother.Filter(e.Location.Z);
+                    _mouseController?.SetPosition(
+                        e.Location.X,
+                        e.Location.Y,
+                        depth
+                    );
+                }
+                else
+                {
+                    var cameraPoint = e.Location;
+                    var result = _calibrationService?.Feed(cameraPoint);
+
+                    if (result == CalibrationService.Event.PointStart)
+                    {
+                    }
+                    else if (result == CalibrationService.Event.PointEnd)
+                    {
+                        CalibrationPoint = ++_calibPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT
+                            ? _calibrationPoints[_calibPointIndex]
+                            : CalibrationPoint.Undefined;
+                    }
+                    else if (result == CalibrationService.Event.Finished)
+                    {
+                        try
+                        {
+                            if (VerifyCalibration())
+                            {
+                                _calibrationService?.SaveToFile(App.CalibrationFileName);
+                                MessageBox.Show("Calibration data saved scucessfully.", "Calibration Verification", MessageBoxButton.OK, MessageBoxImage.Information);
+                                DialogResult = true;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Failed to save calibration data: {ex.Message}", "Calibration Verification", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+
+                        IsCalibrating = false;
+
+                        _handTipService.Stop();
+
+                        _calibrationService = null;
+                    }
+                }
+            });
+
+            System.Diagnostics.Debug.WriteLine($"Calibration point: {CalibrationPoint} at {e.Location.X}, {e.Location.Y}, {e.Location.Z}"); 
         }
     }
 }

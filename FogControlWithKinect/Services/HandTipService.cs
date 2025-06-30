@@ -22,10 +22,23 @@ namespace FogControlWithKinect.Services
             }
         }
 
+        public class FrameArrivedEventArgs : EventArgs
+        {
+            public Body[] Bodies { get; }
+            public FrameArrivedEventArgs(Body[] bodies)
+            {
+                Bodies = bodies;
+            }
+        }
+
         public bool IsAvailable => _kinectSensor.IsAvailable;
+
+        public FrameDescription FrameDescription => _kinectSensor.DepthFrameSource.FrameDescription;
+
 
         public event EventHandler<IsAvailableChangedEventArgs> IsAvailableChanged;
         public event EventHandler<TipLocationChangedEventArgs> TipLocationChanged;
+        public event EventHandler<FrameArrivedEventArgs> FrameArrived;
 
         public HandTipService()
         {
@@ -39,6 +52,8 @@ namespace FogControlWithKinect.Services
 
             _kinectSensor.Open();
         }
+
+        public DepthSpacePoint MapPoint(CameraSpacePoint point) => _coordinateMapper.MapCameraPointToDepthSpace(point);
 
         public void Start(Hand hand)
         {
@@ -73,11 +88,9 @@ namespace FogControlWithKinect.Services
 
         Body[] _bodies = null;
 
+
         private void OnFrameArrived(object sender, BodyFrameArrivedEventArgs e)
         {
-            if (!_isRunning)
-                return;
-
             bool dataReceived = false;
 
             using (BodyFrame bodyFrame = e.FrameReference.AcquireFrame())
@@ -99,34 +112,41 @@ namespace FogControlWithKinect.Services
 
             if (dataReceived && _bodies != null)
             {
-                foreach (Body body in _bodies)
+                if (_isRunning)
                 {
-                    if (!body.IsTracked)
-                        continue;
-
-                    IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
-
-                    // convert the joint points to depth (display) space
-                    var jointPoints = new Dictionary<JointType, Point>();
-
-                    var tipJoint = joints[_jointType];
-                    if (tipJoint.TrackingState == TrackingState.NotTracked)
-                        continue;
-
-                    // sometimes the depth(Z) of an inferred joint may show as negative
-                    // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
-                    CameraSpacePoint position = tipJoint.Position;
-                    if (position.Z < 0)
+                    foreach (Body body in _bodies)
                     {
-                        position.Z = InferredZPositionClamp;
+                        if (!body.IsTracked)
+                            continue;
+
+                        IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+
+                        // convert the joint points to depth (display) space
+                        var jointPoints = new Dictionary<JointType, Point>();
+
+                        var tipJoint = joints[_jointType];
+                        if (tipJoint.TrackingState == TrackingState.NotTracked)
+                            continue;
+
+                        // sometimes the depth(Z) of an inferred joint may show as negative
+                        // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
+                        CameraSpacePoint position = tipJoint.Position;
+                        if (position.Z < 0)
+                        {
+                            position.Z = InferredZPositionClamp;
+                        }
+
+                        // Not needed, just testing what MapCameraPointToDepthSpace does
+                        /*
+                        DepthSpacePoint depthSpacePoint = _coordinateMapper.MapCameraPointToDepthSpace(position);
+                        System.Diagnostics.Debug.WriteLine($"Raw Z = {position.Z:F4}, Mapped XY = ({depthSpacePoint.X:F4}, {depthSpacePoint.Y:F4})");
+                        */
+
+                        TipLocationChanged?.Invoke(this, new TipLocationChangedEventArgs(position));
                     }
-
-                    // Not needed, just testing what MapCameraPointToDepthSpace does
-                    DepthSpacePoint depthSpacePoint = _coordinateMapper.MapCameraPointToDepthSpace(position);
-                    System.Diagnostics.Debug.WriteLine($"Raw Z = {position.Z:F4}, Mapped XY = ({depthSpacePoint.X:F4}, {depthSpacePoint.Y:F4})");
-
-                    TipLocationChanged?.Invoke(this, new TipLocationChangedEventArgs(position));
                 }
+
+                FrameArrived?.Invoke(this, new FrameArrivedEventArgs(_bodies));
             }
         }
     }

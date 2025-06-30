@@ -13,7 +13,7 @@ namespace FogControlWithKinect.Services
         BottomRight
     }
 
-    internal class CalibrationService
+    public class CalibrationService
     {
         public static int CALIBRATOR_POINT_COUNT = 4;
 
@@ -27,6 +27,10 @@ namespace FogControlWithKinect.Services
             PointEnd,		// Finished point calibration
             Finished,		// Successfully finished the calibration
         };
+
+        public double DistanceToScreen => _distanceToScreen;
+        public double[,] Points => _calibPoints;
+
 
         public CalibrationService(double distanceToScreen)
         {

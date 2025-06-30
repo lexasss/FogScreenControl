@@ -3,16 +3,19 @@ using System.IO;
 
 namespace FogControlWithKinect.Services
 {
-    internal class MappingService
+    public class MappingService
     {
         public bool IsReady { get; private set; } = false;
         public double DistanceToScreen { get; private set; } = 2.15;
 
-        public MappingService(string calibFileName)
+        private MappingService()
         {
             _screenWidth = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CXSCREEN);
             _screenHeight = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CYSCREEN);
+        }
 
+        public MappingService(string calibFileName) : this()
+        {
             try
             {
                 LoadFromFile(calibFileName);
@@ -22,6 +25,15 @@ namespace FogControlWithKinect.Services
                 System.Diagnostics.Debug.WriteLine($"[ERROR] Failed to load calibration file: {ex.Message}");
                 return;
             }
+        }
+
+        public MappingService(CalibrationService calibrationService) : this()
+        {
+            _calibPoints = calibrationService.Points;
+            DistanceToScreen = calibrationService.DistanceToScreen;
+
+            IsReady = true;
+            Configure();
         }
 
         /// <summary>
@@ -59,7 +71,6 @@ namespace FogControlWithKinect.Services
         {
             using (var calibFile = new StreamReader(calibFileName))
             {
-
                 int pointIndex = 0;
 
                 while (!calibFile.EndOfStream)

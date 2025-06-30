@@ -3,13 +3,20 @@ using System.Media;
 
 namespace FogControlWithKinect.Services
 {
-    internal enum InterationMethod
+    public enum InterationMethod
     {
+        /// <summary>
+        /// Moves the mouse cursor.
+        /// </summary>
         Touch,
+
+        /// <summary>
+        /// Moves the mouse cursor and simulates a click when the hand is in the fog.
+        /// </summary>
         Tap
     }
 
-    internal class MouseController
+    public class MouseController
     {
         public bool IsPlayingSoundOnEnterFog { get; set; } = false;
 
@@ -47,7 +54,20 @@ namespace FogControlWithKinect.Services
             }
         }
 
-        public void EnterFog(int x, int y)
+        // Internal
+
+        readonly InterationMethod _method;
+        readonly MappingService _mapper;
+        readonly LowPassFilter _filter;
+        readonly int _screenHeight;
+
+        readonly SoundPlayer _soundPlayer = null;
+
+        bool _isInteracting = false;
+        int _x = 0;
+        int _y = 0;
+
+        private void EnterFog(int x, int y)
         {
             if (_method == InterationMethod.Tap)
             {
@@ -78,7 +98,7 @@ namespace FogControlWithKinect.Services
             }
         }
 
-        public void LeaveFog(double depth) // in front of fog
+        private void LeaveFog(double depth) // in front of fog
         {
             if (_method == InterationMethod.Tap)
             {
@@ -94,18 +114,5 @@ namespace FogControlWithKinect.Services
                 _isInteracting = false;
             }
         }
-
-        // Internal
-
-        readonly InterationMethod _method;
-        readonly MappingService _mapper;
-        readonly LowPassFilter _filter;
-        readonly int _screenHeight;
-
-        readonly SoundPlayer _soundPlayer = null;
-
-        bool _isInteracting = false;
-        int _x = 0;
-        int _y = 0;
     }
 }
