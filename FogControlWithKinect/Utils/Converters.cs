@@ -5,13 +5,13 @@ using System.Windows.Data;
 
 namespace FogControlWithKinect.Utils
 {
-    [ValueConversion(typeof(Services.CalibrationPoint), typeof(Visibility))]
+    [ValueConversion(typeof(Enums.CalibrationPoint), typeof(Visibility))]
     public class CalibrationPointToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            Services.CalibrationPoint pt = (Services.CalibrationPoint)value;
-            Services.CalibrationPoint id = (Services.CalibrationPoint)parameter;
+            Enums.CalibrationPoint pt = (Enums.CalibrationPoint)value;
+            Enums.CalibrationPoint id = (Enums.CalibrationPoint)parameter;
             return pt == id ? Visibility.Visible : Visibility.Hidden;
         }
 

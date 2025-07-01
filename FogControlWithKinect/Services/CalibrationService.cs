@@ -1,23 +1,13 @@
 ﻿using FogControlWithKinect.Models;
 using MathNet.Numerics.Statistics;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace FogControlWithKinect.Services
 {
-    public enum CalibrationPoint
-    {
-        Undefined,
-        TopLeft,
-        TopRight,
-        BottomLeft,
-        BottomRight
-    }
-
     public class CalibrationService
     {
-        public static int CALIBRATOR_POINT_COUNT = 4;
-
         public enum Event
         {
             Invalid = -1,	// Calibration is completed, samples should not be fed in anymore
@@ -29,21 +19,22 @@ namespace FogControlWithKinect.Services
             Finished,		// Successfully finished the calibration
         };
 
-        public SpacePoint[] SpacePoints => _spacePoints;
+        public SpacePoint[] SpacePoints => _spacePoints.ToArray();
 
 
-        public CalibrationService(MappingService mapper)
+        public CalibrationService(MappingService mapper, int pointCount)
         {
             _mapper = mapper;
+            _pointCount = pointCount;
         }
 
         public void SaveToFile(string filename)
         {
             using (var writer = new StreamWriter(filename))
             {
-                for (int i = 0; i < CALIBRATOR_POINT_COUNT; i++)
+                foreach (var spacePoint in _spacePoints)
                 {
-                    writer.WriteLine($"{_spacePoints[i].X} {_spacePoints[i].Y} {_spacePoints[i].Z}");
+                    writer.WriteLine($"{spacePoint.X} {spacePoint.Y} {spacePoint.Z}");
                 }
 
                 writer.WriteLine(_mapper.DistanceToScreen);
@@ -75,7 +66,7 @@ namespace FogControlWithKinect.Services
             // stop if the distance exceed the threshold
             if (!_mapper.IsInFog(spacePoint))
             {
-                if (_calibPointIndex == CALIBRATOR_POINT_COUNT) // done
+                if (_calibPointIndex == _pointCount) // done
                 {
                     _state = State.Completed;
                     result = Event.Finished;
@@ -94,17 +85,12 @@ namespace FogControlWithKinect.Services
                 return result;
             }
 
-            if (_calibPointIndex < CALIBRATOR_POINT_COUNT)
+            if (_calibPointIndex < _pointCount)
             {
                 // stop if the too close to the last calibrated point
                 if (_state == State.Off && _calibPointIndex > 0)
                 {
-                    double prevX = _spacePoints[_calibPointIndex - 1].X;
-                    double prevY = _spacePoints[_calibPointIndex - 1].Y;
-                    double dx = spacePoint.X - prevX;
-                    double dy = spacePoint.Y - prevY;
-                    double distToPrevPoint = Math.Sqrt(dx * dx + dy * dy);
-
+                    double distToPrevPoint = spacePoint.DistanceToXY(_spacePoints[_calibPointIndex - 1]);
                     if (distToPrevPoint < SAFETY_ZONE_RADIUS)
                         return result;
                 }
@@ -123,7 +109,7 @@ namespace FogControlWithKinect.Services
 
                 if (_sampleIndex == CALIBRATOR_SAMPLES_PER_POINT)
                 {
-                    _spacePoints[_calibPointIndex] = new SpacePoint(_samplesX.Median(), _samplesY.Median(), _samplesZ.Median());
+                    _spacePoints.Add(new SpacePoint(_samplesX.Median(), _samplesY.Median(), _samplesZ.Median()));
 
                     // get ready for the next point
                     _sampleIndex = 0;
@@ -151,8 +137,9 @@ namespace FogControlWithKinect.Services
         const int CALIBRATOR_SAMPLES_PER_POINT = 11;
 
         readonly MappingService _mapper;
+        readonly int _pointCount;
 
-        readonly SpacePoint[] _spacePoints = new SpacePoint[CALIBRATOR_POINT_COUNT];
+        readonly List<SpacePoint> _spacePoints = new List<SpacePoint>();
         readonly double[] _samplesX = new double[CALIBRATOR_SAMPLES_PER_POINT];
         readonly double[] _samplesY = new double[CALIBRATOR_SAMPLES_PER_POINT];
         readonly double[] _samplesZ = new double[CALIBRATOR_SAMPLES_PER_POINT];

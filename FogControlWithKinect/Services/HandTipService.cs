@@ -1,4 +1,5 @@
-﻿using FogControlWithKinect.Models;
+﻿using FogControlWithKinect.Enums;
+using FogControlWithKinect.Models;
 using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
@@ -6,12 +7,6 @@ using System.Windows;
 
 namespace FogControlWithKinect.Services
 {
-    public enum Hand
-    {
-        Left,
-        Right
-    }
-
     public class HandTipService : IDisposable
     {
         public class TipLocationChangedEventArgs : EventArgs

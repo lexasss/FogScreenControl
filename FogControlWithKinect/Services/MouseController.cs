@@ -1,22 +1,8 @@
-﻿using FogControlWithKinect.Models;
-using System;
-using System.Media;
+﻿using FogControlWithKinect.Enums;
+using FogControlWithKinect.Models;
 
 namespace FogControlWithKinect.Services
 {
-    public enum InterationMethod
-    {
-        /// <summary>
-        /// Moves the mouse cursor.
-        /// </summary>
-        Move,
-
-        /// <summary>
-        /// Moves the mouse cursor and simulates a click when the hand is in the fog.
-        /// </summary>
-        ClickAndDrag
-    }
-
     public class MouseController
     {
         public bool IsPlayingSoundOnEnterFog { get; set; } = false;
@@ -73,7 +59,7 @@ namespace FogControlWithKinect.Services
 
                     if (IsPlayingSoundOnEnterFog)
                     {
-                        App.ForEnterSound.Play();
+                        Utils.Sounds.In.Play();
                     }
                 }
             }
@@ -93,6 +79,11 @@ namespace FogControlWithKinect.Services
                     _isInteracting = false;
 
                     Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTUP, _x, _y, 0, 0);
+
+                    if (IsPlayingSoundOnEnterFog)
+                    {
+                        Utils.Sounds.Out.Play();
+                    }
                 }
             }
             else if (_method == InterationMethod.Move)

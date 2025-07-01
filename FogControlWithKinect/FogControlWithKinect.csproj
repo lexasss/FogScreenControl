@@ -65,7 +65,7 @@
     <GenerateManifests>true</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DevExpress.Mvvm, Version=24.1.0.0, Culture=neutral, PublicKeyToken=382ad28f6ae31f30, processorArchitecture=MSIL">
@@ -114,6 +114,9 @@
     <Compile Include="CalibrationWindow.xaml.cs">
       <DependentUpon>CalibrationWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Enums\CalibrationPoint.cs" />
+    <Compile Include="Enums\Hand.cs" />
+    <Compile Include="Enums\InteractionMethod.cs" />
     <Compile Include="Models\ScreenPoint.cs" />
     <Compile Include="Models\SpacePoint.cs" />
     <Compile Include="Services\CalibrationService.cs" />
@@ -126,6 +129,7 @@
     <Compile Include="Services\MappingService.cs" />
     <Compile Include="Services\MouseController.cs" />
     <Compile Include="Services\SkeletonPainter.cs" />
+    <Compile Include="Utils\Sounds.cs" />
     <Compile Include="Utils\WinAPI.cs" />
     <Page Include="CalibrationWindow.xaml">
       <SubType>Designer</SubType>
@@ -171,7 +175,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="FogControlWithKinect_TemporaryKey.pfx" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -182,9 +185,11 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\Sounds\out.wav" />
     <Resource Include="Assets\Images\icon.ico" />
     <Resource Include="Assets\Images\icon.png" />
-    <Content Include="Assets\Sounds\sound.wav">
+    <Content Include="Assets\Sounds\in.wav" />
+    <Content Include="Assets\Sounds\done.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -21,7 +21,7 @@
         
         <Style x:Key="Header" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
             <Setter Property="FontSize" Value="14"/>
         </Style>
         <Style x:Key="Status" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
@@ -30,9 +30,15 @@
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Foreground" Value="#FF444444"/>
         </Style>
+        <Style x:Key="VerticalSeparator" TargetType="Border">
+            <Setter Property="BorderBrush" Value="Gray"/>
+            <Setter Property="BorderThickness" Value="1,0,0,0"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Margin" Value="4"/>
+        </Style>
     </Window.Resources>
-    
-    <Grid>
+
+    <Grid IsEnabled="{Binding IsReady}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
@@ -42,46 +48,63 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
             <ColumnDefinition/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="0" Grid.Column="0"
-                    IsEnabled="{Binding IsReady}">
-            <Label Style="{StaticResource Header}"
-                   Content="Mouse operations"/>
-            <StackPanel HorizontalAlignment="Center"
-                        IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}">
-                <CheckBox IsEnabled="False"
-                          Content="Move"
-                          IsChecked="true"/>
-                <CheckBox x:Name="chkMouseDrag"
-                          Content="Click-n-Drag"
-                          Tag="Touch"
-                          IsChecked="True"/>
+        <Border Grid.Row="0" Grid.Column="0"
+                Style="{StaticResource VerticalSeparator}"
+                BorderThickness="0">
+            <StackPanel Grid.Row="0" Grid.Column="0">
+                <Label Style="{StaticResource Header}"
+                       Content="Mouse operations"/>
+                <StackPanel HorizontalAlignment="Center"
+                            IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}">
+                    <CheckBox IsEnabled="False"
+                              Content="Move"
+                              IsChecked="true"/>
+                    <CheckBox x:Name="chkMouseDrag"
+                              Content="Click-n-Drag"
+                              Tag="Touch"
+                              IsChecked="{Binding IsClickAndDrag, Mode=TwoWay}"/>
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
+        </Border>
 
-        <StackPanel Grid.Row="0" Grid.Column="1"
-                    IsEnabled="{Binding IsReady}">
-            <Label Style="{StaticResource Header}"
-                   Content="Hand"/>
-            <CheckBox x:Name="chkHand"
-                      Style="{StaticResource Switch}"
-                      IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
-                      Content="Right"
-                      Tag="Left"
-                      IsChecked="{Binding IsHandRight}"
-                      HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Center"/>
-        </StackPanel>
+        <Border Grid.Row="0" Grid.Column="1"
+                Style="{StaticResource VerticalSeparator}">
+            <StackPanel>
+                <Label Style="{StaticResource Header}"
+                       Content="Hand"/>
+                <CheckBox Style="{StaticResource Switch}"
+                          IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
+                          Content="Right"
+                          Tag="Left"
+                          IsChecked="{Binding IsHandRight}"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Center"/>
+            </StackPanel>
+        </Border>
 
-        <Viewbox Grid.Row="1" Grid.ColumnSpan="2"
+        <Border Grid.Row="0" Grid.Column="2"
+                Style="{StaticResource VerticalSeparator}">
+            <StackPanel>
+                <Label Style="{StaticResource Header}"
+                   Content="Options"/>
+                <StackPanel HorizontalAlignment="Center">
+                    <CheckBox Content="Use sounds"
+                              IsChecked="{Binding IsHandRight}"
+                              HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Viewbox Grid.Row="1" Grid.ColumnSpan="3"
                  Margin="12"
                  HorizontalAlignment="Center">
             <Image x:Name="imgSkeleton" Stretch="UniformToFill"/>
         </Viewbox>
 
-        <StackPanel Grid.Row="2" Grid.ColumnSpan="2"
-                    IsEnabled="{Binding IsReady}"
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="3"
                     HorizontalAlignment="Center">
             <Button Content="{Binding ToggleInteractionButtonText, Mode=OneWay}"
                     Command="{Binding ToggleInteractionCommand}"
@@ -94,7 +117,7 @@
                     Margin="5"/>
         </StackPanel>
 
-        <Label Grid.Row="3" Grid.ColumnSpan="2"
+        <Label Grid.Row="3" Grid.ColumnSpan="3"
                Style="{StaticResource Status}"
                Content="{Binding StatusText}"/>
     </Grid>

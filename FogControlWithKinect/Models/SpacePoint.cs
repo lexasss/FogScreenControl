@@ -1,4 +1,6 @@
-﻿namespace FogControlWithKinect.Models
+﻿using System;
+
+namespace FogControlWithKinect.Models
 {
     /// <summary>
     /// Represents a 3D point in meters.
@@ -36,6 +38,15 @@
 
         public static SpacePoint From(Microsoft.Kinect.CameraSpacePoint kinectPoint) =>
             new SpacePoint(kinectPoint.X, kinectPoint.Y, kinectPoint.Z);
+
+        public double DistanceToXY(SpacePoint other)
+        {
+            double x = other.X;
+            double y = other.Y;
+            double dx = X - x;
+            double dy = Y - y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
 
         public bool Equals(SpacePoint point) => X == point.X && Y == point.Y && Z == point.Z;
 

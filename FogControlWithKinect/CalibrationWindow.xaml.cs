@@ -1,7 +1,10 @@
 ﻿using DevExpress.Mvvm;
+using FogControlWithKinect.Enums;
 using FogControlWithKinect.Services;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
@@ -9,6 +12,19 @@ namespace FogControlWithKinect
 {
     public partial class CalibrationWindow : Window, INotifyPropertyChanged
     {
+        public IEnumerable<int> CalibrationPointCounts => _calibrationPointsLists.Keys;
+
+        public int CalibrationPointCount
+        {
+            get => _calibrationPointCount;
+            set
+            {
+                _calibrationPointCount = value;
+                _calibrationPoints = _calibrationPointsLists[_calibrationPointCount];
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CalibrationPointCount)));
+            }
+        }
+
         public bool IsCalibrating
         {
             get => _isCalibrating;
@@ -62,7 +78,7 @@ namespace FogControlWithKinect
 
             if (IsCalibrating)
             {
-                _calibrationService = new CalibrationService(_mappingService);
+                _calibrationService = new CalibrationService(_mappingService, _calibrationPointCount);
                 _handTipService.Start(_hand);
 
                 _calibPointIndex = 0;
@@ -88,6 +104,9 @@ namespace FogControlWithKinect
         public CalibrationWindow(HandTipService handTipService, Hand hand)
         {
             InitializeComponent();
+
+            _calibrationPointCount = _calibrationPointsLists.First().Key;
+            _calibrationPoints = _calibrationPointsLists[_calibrationPointCount];
 
             _mappingService = new MappingService(App.CalibrationFileName);
             _handTipService = handTipService;
@@ -117,12 +136,37 @@ namespace FogControlWithKinect
 
         // Internal
 
-        readonly CalibrationPoint[] _calibrationPoints = new[]
-        {
-            CalibrationPoint.TopLeft,
-            CalibrationPoint.TopRight,
-            CalibrationPoint.BottomLeft,
-            CalibrationPoint.BottomRight,
+        readonly Dictionary<int, CalibrationPoint[]> _calibrationPointsLists = new Dictionary<int, CalibrationPoint[]>() {
+            { 4,  new []
+                {
+                    CalibrationPoint.TopLeft,
+                    CalibrationPoint.TopRight,
+                    CalibrationPoint.BottomLeft,
+                    CalibrationPoint.BottomRight,
+                }
+            },
+            { 5, new[]
+                {
+                    CalibrationPoint.TopLeft,
+                    CalibrationPoint.TopRight,
+                    CalibrationPoint.BottomLeft,
+                    CalibrationPoint.BottomRight,
+                    CalibrationPoint.Center,
+                }
+            },
+            { 9, new[]
+                {
+                    CalibrationPoint.TopLeft,
+                    CalibrationPoint.Top,
+                    CalibrationPoint.TopRight,
+                    CalibrationPoint.Left,
+                    CalibrationPoint.Center,
+                    CalibrationPoint.Right,
+                    CalibrationPoint.BottomLeft,
+                    CalibrationPoint.Bottom,
+                    CalibrationPoint.BottomRight,
+                }
+            }
         };
 
         readonly MappingService _mappingService;
@@ -130,8 +174,12 @@ namespace FogControlWithKinect
         readonly SkeletonPainter _skeletonPainter;
         readonly Hand _hand;
 
+        int _calibrationPointCount;
+
         MouseController _mouseController = null;
         CalibrationService _calibrationService = null;
+
+        CalibrationPoint[] _calibrationPoints;
         CalibrationPoint _calibrationPoint = CalibrationPoint.Undefined;
 
         bool _isCalibrating = false;
@@ -174,9 +222,9 @@ namespace FogControlWithKinect
                     }
                     else if (result == CalibrationService.Event.PointEnd)
                     {
-                        App.ForEnterSound.Play();
+                        Utils.Sounds.CalibPointDone.Play();
 
-                        CalibrationPoint = ++_calibPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT
+                        CalibrationPoint = ++_calibPointIndex < _calibrationPointCount
                             ? _calibrationPoints[_calibPointIndex]
                             : CalibrationPoint.Undefined;
                     }

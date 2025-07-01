@@ -10,15 +10,33 @@ namespace FogControlWithKinect
     {
         public bool IsHandRight
         {
-            get => _hand == Services.Hand.Right;
+            get => _hand == Enums.Hand.Right;
             set
             {
-                _hand = value ? Services.Hand.Right : Services.Hand.Left;
+                _hand = value ? Enums.Hand.Right : Enums.Hand.Left;
                 if (_skeletonPainter != null)
                 {
                     _skeletonPainter.Hand = _hand;
                 }
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsHandRight)));
+            }
+        }
+        public bool IsClickAndDrag
+        {
+            get => _isClickAndDrag;
+            set
+            {
+                _isClickAndDrag = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsClickAndDrag)));
+            }
+        }
+        public bool IsSoundEnabled
+        {
+            get => _isSoundEnabed;
+            set
+            {
+                _isSoundEnabed = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSoundEnabled)));
             }
         }
         public bool IsReady
@@ -62,16 +80,16 @@ namespace FogControlWithKinect
                     return;
                 }
 
-                var interactionMethod = chkMouseDrag.IsChecked == true ? Services.InterationMethod.ClickAndDrag : Services.InterationMethod.Move;
-                var hand = chkHand.IsChecked == true ? Services.Hand.Right : Services.Hand.Left;
+                var interactionMethod = chkMouseDrag.IsChecked == true ? Enums.InterationMethod.ClickAndDrag : Enums.InterationMethod.Move;
 
-                _mouseController = new Services.MouseController(
-                    interactionMethod,
-                    mapper);
+                _mouseController = new Services.MouseController(interactionMethod, mapper)
+                {
+                    IsPlayingSoundOnEnterFog = IsSoundEnabled
+                };
 
                 _skeletonPainter.MappingService = mapper;
 
-                _handTipService?.Start(hand);
+                _handTipService?.Start(_hand);
             }
             else
             {
@@ -104,7 +122,9 @@ namespace FogControlWithKinect
         Services.MouseController _mouseController = null;
         Services.SkeletonPainter _skeletonPainter = null;
 
-        Services.Hand _hand = Services.Hand.Right;
+        Enums.Hand _hand = Enums.Hand.Right;
+        bool _isClickAndDrag = true;
+        bool _isSoundEnabed = true;
 
         bool _isReady = false;
         bool _isRunning = false;
@@ -140,8 +160,7 @@ namespace FogControlWithKinect
             });
 
             var frameDescription = _handTipService.FrameDescription;
-            var hand = chkHand.IsChecked == true ? Services.Hand.Right : Services.Hand.Left;
-            _skeletonPainter = new Services.SkeletonPainter(frameDescription.Width, frameDescription.Height, hand);
+            _skeletonPainter = new Services.SkeletonPainter(frameDescription.Width, frameDescription.Height, _hand);
 
             imgSkeleton.Source = _skeletonPainter.ImageSource;
         }

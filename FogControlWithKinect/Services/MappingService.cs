@@ -1,5 +1,6 @@
 ﻿using FogControlWithKinect.Models;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace FogControlWithKinect.Services
@@ -63,11 +64,8 @@ namespace FogControlWithKinect.Services
 
         private void LoadFromFile(string calibFileName)
         {
-            SpacePoint[] spacePoints = new SpacePoint[CalibrationService.CALIBRATOR_POINT_COUNT];
-            ScreenPoint[] screenPoints = new ScreenPoint[CalibrationService.CALIBRATOR_POINT_COUNT];
-
-            int spacePointIndex = 0;
-            int screenPointIndex = 0;
+            var spacePoints = new List<SpacePoint>();
+            var screenPoints = new List<ScreenPoint>();
 
             using (var calibFile = new StreamReader(calibFileName))
             {
@@ -75,13 +73,13 @@ namespace FogControlWithKinect.Services
                 {
                     var line = calibFile.ReadLine();
                     var p = line?.Split(' ');
-                    if (p?.Length == 3 && spacePointIndex < CalibrationService.CALIBRATOR_POINT_COUNT) // tracker points
+                    if (p?.Length == 3) // tracker points
                     {
-                        spacePoints[spacePointIndex++] = new SpacePoint(double.Parse(p[0]), double.Parse(p[1]), double.Parse(p[2]));
+                        spacePoints.Add(new SpacePoint(double.Parse(p[0]), double.Parse(p[1]), double.Parse(p[2])));
                     }
-                    else if (p?.Length == 2 && screenPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT)    // screen points
+                    else if (p?.Length == 2)    // screen points
                     {
-                        screenPoints[screenPointIndex++] = new ScreenPoint(double.Parse(p[0]), double.Parse(p[1]));
+                        screenPoints.Add(new ScreenPoint(double.Parse(p[0]), double.Parse(p[1])));
                     }
                     else if (line.Length > 0 && double.TryParse(line, out double distanceToScreen))
                     {
@@ -90,33 +88,33 @@ namespace FogControlWithKinect.Services
                 }
             }
 
-            if (screenPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT)
-            {
-                screenPoints = ConstructScreenPoints();
-            }
-            if (spacePointIndex < CalibrationService.CALIBRATOR_POINT_COUNT)
+            if (spacePoints.Count < 4)
             {
                 return;
             }
 
-            _mapper.Configure(screenPoints, spacePoints);
+            var screenPointArray = screenPoints.ToArray();
+            if (screenPointArray.Length < 4)
+            {
+                screenPointArray = ConstructScreenPoints();
+            }
+
+            _mapper.Configure(screenPointArray, spacePoints.ToArray());
 
             IsReady = true;
         }
 
         private ScreenPoint[] ConstructScreenPoints()
         {
-            var screenPoints = new ScreenPoint[CalibrationService.CALIBRATOR_POINT_COUNT];
-
             var screenWidth = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CXSCREEN);
             var screenHeight = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CYSCREEN);
 
-            screenPoints[0] = new ScreenPoint(0, 0);
-            screenPoints[1] = new ScreenPoint(screenWidth, 0);
-            screenPoints[2] = new ScreenPoint(0, screenHeight);
-            screenPoints[3] = new ScreenPoint(screenWidth, screenHeight);
-
-            return screenPoints;
+            return new ScreenPoint[] {
+                new ScreenPoint(0, 0),
+                new ScreenPoint(screenWidth, 0),
+                new ScreenPoint(0, screenHeight),
+                new ScreenPoint(screenWidth, screenHeight)
+            };
         }
     }
 }
