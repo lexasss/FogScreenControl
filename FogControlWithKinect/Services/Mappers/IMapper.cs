@@ -1,8 +1,12 @@
-﻿namespace FogControlWithKinect.Services.Mappers
+﻿using FogControlWithKinect.Models;
+
+namespace FogControlWithKinect.Services.Mappers
 {
     internal interface IMapper
     {
-        void Configure(double[,] screenPoints, double[,] trackerPoints);
-        System.Windows.Point Map(double x, double y);
+        void Configure(ScreenPoint[] screenPoints, SpacePoint[] spacePoints);
+        ScreenPoint Map(SpacePoint spacePoint);
+        bool IsInFog(SpacePoint spacePoint, double distanceToScreen);
+        double GetDistanceFromScreen(SpacePoint spacePoint, double distanceToScreen);
     }
 }

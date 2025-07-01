@@ -4,12 +4,21 @@ namespace FogControlWithKinect.Services
 {
     public class LowPassFilter
     {
+        /// <summary>
+        /// Low pass filter
+        /// </summary>
+        /// <param name="t">Greater values mean more intense filtering</param>
+        /// <param name="interval">Inter-sample interval in milliseconds</param>
+        /// <exception cref="Exception"></exception>
         public LowPassFilter(double t, double interval)
         {
-            if (t <= 0 || interval <= 0)
-                throw new Exception("Invalid parameters for LowPassFilter");
+            if (t < 0)
+                throw new ArgumentException("Parameters T cannot be negative");
+            if (interval <= 0)
+                throw new ArgumentException("Interval must be a poitive value in milliseconds");
 
             _alpha = t / interval;
+
             Reset();
         }
 

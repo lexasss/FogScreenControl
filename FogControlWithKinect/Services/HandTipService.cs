@@ -1,4 +1,5 @@
-﻿using Microsoft.Kinect;
+﻿using FogControlWithKinect.Models;
+using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -15,8 +16,8 @@ namespace FogControlWithKinect.Services
     {
         public class TipLocationChangedEventArgs : EventArgs
         {
-            public CameraSpacePoint Location { get; }
-            public TipLocationChangedEventArgs(CameraSpacePoint location)
+            public SpacePoint Location { get; }
+            public TipLocationChangedEventArgs(SpacePoint location)
             {
                 Location = location;
             }
@@ -31,7 +32,7 @@ namespace FogControlWithKinect.Services
             }
         }
 
-        public static JointType HandToTipJoint(Hand hand) =>hand == Hand.Left ? JointType.HandTipLeft : JointType.HandTipRight;
+        public static JointType HandToJointType(Hand hand) => hand == Hand.Left ? JointType.HandTipLeft : JointType.HandTipRight;
 
         public bool IsAvailable => _kinectSensor.IsAvailable;
 
@@ -55,11 +56,11 @@ namespace FogControlWithKinect.Services
             _kinectSensor.Open();
         }
 
-        public DepthSpacePoint MapPoint(CameraSpacePoint point) => _coordinateMapper.MapCameraPointToDepthSpace(point);
+        public DepthSpacePoint SpaceToPlane(CameraSpacePoint point) => _coordinateMapper.MapCameraPointToDepthSpace(point);
 
         public void Start(Hand hand)
         {
-            _jointType = HandToTipJoint(hand);
+            _jointType = HandToJointType(hand);
             _isRunning = true;
         }
 
@@ -138,13 +139,13 @@ namespace FogControlWithKinect.Services
                             position.Z = InferredZPositionClamp;
                         }
 
-                        // Not needed, just testing what MapCameraPointToDepthSpace does
+                        // Not needed, just testing what MapCameraPointToDepthSpace does. Left commented out for now, but later can be used for debugging.
                         /*
                         DepthSpacePoint depthSpacePoint = _coordinateMapper.MapCameraPointToDepthSpace(position);
                         System.Diagnostics.Debug.WriteLine($"Raw Z = {position.Z:F4}, Mapped XY = ({depthSpacePoint.X:F4}, {depthSpacePoint.Y:F4})");
                         */
 
-                        TipLocationChanged?.Invoke(this, new TipLocationChangedEventArgs(position));
+                        TipLocationChanged?.Invoke(this, new TipLocationChangedEventArgs(SpacePoint.From(position)));
                     }
                 }
 

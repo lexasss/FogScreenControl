@@ -56,22 +56,20 @@ namespace FogControlWithKinect
                 var mapper = new Services.MappingService(App.CalibrationFileName);
                 if (!mapper.IsReady)
                 {
-                    MessageBox.Show("Kinect-to-screen mapping is not available. Please calibrate the device first.",
-                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Sensor-to-fogscreen mapping is not available. Please calibrate the sensor.",
+                        Title, MessageBoxButton.OK, MessageBoxImage.Error);
                     IsRunning = false;
                     return;
                 }
 
-                var interactionMethod = chkMouseDrag.IsChecked == true ? Services.InterationMethod.Tap : Services.InterationMethod.Touch;
+                var interactionMethod = chkMouseDrag.IsChecked == true ? Services.InterationMethod.ClickAndDrag : Services.InterationMethod.Move;
                 var hand = chkHand.IsChecked == true ? Services.Hand.Right : Services.Hand.Left;
 
                 _mouseController = new Services.MouseController(
                     interactionMethod,
-                    mapper,
-                    App.PointSmoother
-                );
+                    mapper);
 
-                _skeletonPainter.DistanceToScreen = mapper.DistanceToScreen;
+                _skeletonPainter.MappingService = mapper;
 
                 _handTipService?.Start(hand);
             }
@@ -79,7 +77,7 @@ namespace FogControlWithKinect
             {
                 _handTipService?.Stop();
                 _skeletonPainter?.Clear();
-                _skeletonPainter.DistanceToScreen = null;
+                _skeletonPainter.MappingService = null;
                 _mouseController = null;
             }
         });
@@ -130,12 +128,7 @@ namespace FogControlWithKinect
                 if (_isCalibrating)
                     return;
 
-                double depth = App.DepthSmoother.Filter(args.Location.Z);
-                _mouseController?.SetPosition(
-                    args.Location.X,
-                    args.Location.Y,
-                    depth
-                );
+                _mouseController?.SetPosition(args.Location);
             });
 
             _handTipService.FrameArrived += (s, args) => Dispatcher.Invoke(() =>
@@ -143,7 +136,7 @@ namespace FogControlWithKinect
                 if (_isCalibrating)
                     return;
 
-                _skeletonPainter?.Draw(args.Bodies, (pt) => _handTipService.MapPoint(pt));
+                _skeletonPainter?.Draw(args.Bodies, (pt) => _handTipService.SpaceToPlane(pt));
             });
 
             var frameDescription = _handTipService.FrameDescription;

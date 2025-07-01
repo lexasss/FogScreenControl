@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FogControlWithKinect.Models;
+using System;
 using System.Media;
 
 namespace FogControlWithKinect.Services
@@ -8,25 +9,22 @@ namespace FogControlWithKinect.Services
         /// <summary>
         /// Moves the mouse cursor.
         /// </summary>
-        Touch,
+        Move,
 
         /// <summary>
         /// Moves the mouse cursor and simulates a click when the hand is in the fog.
         /// </summary>
-        Tap
+        ClickAndDrag
     }
 
     public class MouseController
     {
         public bool IsPlayingSoundOnEnterFog { get; set; } = false;
 
-        public MouseController(InterationMethod method, MappingService mapper, LowPassFilter filter)
+        public MouseController(InterationMethod method, MappingService mapper)
         {
             _method = method;
             _mapper = mapper;
-            _filter = filter;
-
-            _screenHeight = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CYSCREEN);
 
             try
             {
@@ -39,27 +37,30 @@ namespace FogControlWithKinect.Services
             }
         }
 
-        public void SetPosition(double x, double y, double depth)
+        public void SetPosition(SpacePoint spacePoint)
         {
-            if (depth < _mapper.DistanceToScreen)
+            double depth = App.DepthSmoother.Filter(spacePoint.Z);
+            spacePoint = new SpacePoint(spacePoint.X, spacePoint.Y, depth);
+
+            if (_mapper.IsInFog(spacePoint))
             {
-                var screenPoint = _mapper.Map(x, y);
-                (x, y) = _filter.Filter(screenPoint.X, screenPoint.Y);
+                var screenPoint = _mapper.Map(spacePoint);
+                var (x, y) = App.PointSmoother.Filter(screenPoint.X, screenPoint.Y);
                 EnterFog((int)x, (int)y);
             }
             else
             {
                 LeaveFog(_mapper.DistanceToScreen - depth);
-                _filter.Reset();
+                App.PointSmoother.Reset();
             }
         }
 
         // Internal
 
+        const double ANTIFLICKERING_THRESHOLD = -0.05; // meters (negative values mean "in front of fog")
+
         readonly InterationMethod _method;
         readonly MappingService _mapper;
-        readonly LowPassFilter _filter;
-        readonly int _screenHeight;
 
         readonly SoundPlayer _soundPlayer = null;
 
@@ -69,47 +70,44 @@ namespace FogControlWithKinect.Services
 
         private void EnterFog(int x, int y)
         {
-            if (_method == InterationMethod.Tap)
+            if (_method == InterationMethod.ClickAndDrag)
             {
-                if (y > 50 && y < (_screenHeight - 50)) // no need to apply these restrictions anymore
+                Utils.WinAPI.SetCursorPos(x, y);
+
+                _x = x;
+                _y = y;
+
+                if (!_isInteracting)
                 {
-                    Utils.WinAPI.SetCursorPos(x, y);
+                    _isInteracting = true;
 
-                    _x = x;
-                    _y = y;
+                    Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTDOWN, _x, _y, 0, 0);
 
-                    if (!_isInteracting)
+                    if (IsPlayingSoundOnEnterFog)
                     {
-                        _isInteracting = true;
-
-                        Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTDOWN, _x, _y, 0, 0);
-
-                        if (IsPlayingSoundOnEnterFog)
-                        {
-                            _soundPlayer.Play();
-                        }
+                        _soundPlayer.Play();
                     }
                 }
             }
-            else if (_method == InterationMethod.Touch)
+            else if (_method == InterationMethod.Move)
             {
                 _isInteracting = true;
                 Utils.WinAPI.SetCursorPos(x, y);
             }
         }
 
-        private void LeaveFog(double depth) // in front of fog
+        private void LeaveFog(double handTipOffsetFromScreen) // in front of fog
         {
-            if (_method == InterationMethod.Tap)
+            if (_method == InterationMethod.ClickAndDrag)
             {
-                if (_isInteracting && depth < -0.05)    // the offset of 0.05 meters (towards a user) is a threshold to avoid flickering
+                if (_isInteracting && handTipOffsetFromScreen < ANTIFLICKERING_THRESHOLD)
                 {
                     _isInteracting = false;
 
                     Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTUP, _x, _y, 0, 0);
                 }
             }
-            else if (_method == InterationMethod.Touch)
+            else if (_method == InterationMethod.Move)
             {
                 _isInteracting = false;
             }

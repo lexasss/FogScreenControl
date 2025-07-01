@@ -1,4 +1,5 @@
-﻿using MathNet.Numerics.Statistics;
+﻿using FogControlWithKinect.Models;
+using MathNet.Numerics.Statistics;
 using System;
 using System.IO;
 
@@ -28,13 +29,12 @@ namespace FogControlWithKinect.Services
             Finished,		// Successfully finished the calibration
         };
 
-        public double DistanceToScreen => _distanceToScreen;
-        public double[,] TrackerPoints => _calibPoints;
+        public SpacePoint[] SpacePoints => _spacePoints;
 
 
-        public CalibrationService(double distanceToScreen)
+        public CalibrationService(MappingService mapper)
         {
-            _distanceToScreen = distanceToScreen;
+            _mapper = mapper;
         }
 
         public void SaveToFile(string filename)
@@ -43,13 +43,20 @@ namespace FogControlWithKinect.Services
             {
                 for (int i = 0; i < CALIBRATOR_POINT_COUNT; i++)
                 {
-                    writer.WriteLine($"{_calibPoints[i, 0]} {_calibPoints[i, 1]} {_calibPoints[i, 2]}");
+                    writer.WriteLine($"{_spacePoints[i].X} {_spacePoints[i].Y} {_spacePoints[i].Z}");
                 }
-                writer.WriteLine(_distanceToScreen);
+
+                writer.WriteLine(_mapper.DistanceToScreen);
+
+                ScreenPoint[] screenPoints = _mapper.GetScreenPoints();
+                foreach (var screenPoint in screenPoints)
+                {
+                    writer.WriteLine($"{screenPoint.X} {screenPoint.Y}");
+                }
             }
         }
 
-        public Event Feed(Microsoft.Kinect.CameraSpacePoint cameraPoint)
+        public Event Feed(SpacePoint spacePoint)
         {
             // quit if calibraiton is done already
             if (_state == State.Completed)
@@ -66,7 +73,7 @@ namespace FogControlWithKinect.Services
             Event result = Event.None;
 
             // stop if the distance exceed the threshold
-            if (cameraPoint.Z > _distanceToScreen)
+            if (!_mapper.IsInFog(spacePoint))
             {
                 if (_calibPointIndex == CALIBRATOR_POINT_COUNT) // done
                 {
@@ -92,11 +99,12 @@ namespace FogControlWithKinect.Services
                 // stop if the too close to the last calibrated point
                 if (_state == State.Off && _calibPointIndex > 0)
                 {
-                    double prevX = _calibPoints[_calibPointIndex - 1, 0];
-                    double prevY = _calibPoints[_calibPointIndex - 1, 1];
-                    double dx = cameraPoint.X - prevX;
-                    double dy = cameraPoint.Y - prevY;
+                    double prevX = _spacePoints[_calibPointIndex - 1].X;
+                    double prevY = _spacePoints[_calibPointIndex - 1].Y;
+                    double dx = spacePoint.X - prevX;
+                    double dy = spacePoint.Y - prevY;
                     double distToPrevPoint = Math.Sqrt(dx * dx + dy * dy);
+
                     if (distToPrevPoint < SAFETY_ZONE_RADIUS)
                         return result;
                 }
@@ -108,16 +116,15 @@ namespace FogControlWithKinect.Services
                 _state = State.Calibrating;
 
                 // add the sample
-                _samplesX[_sampleIndex] = cameraPoint.X;
-                _samplesY[_sampleIndex] = cameraPoint.Y;
-                _samplesZ[_sampleIndex] = cameraPoint.Z;
+                _samplesX[_sampleIndex] = spacePoint.X;
+                _samplesY[_sampleIndex] = spacePoint.Y;
+                _samplesZ[_sampleIndex] = spacePoint.Z;
                 _sampleIndex++;
 
                 if (_sampleIndex == CALIBRATOR_SAMPLES_PER_POINT)
                 {
-                    _calibPoints[_calibPointIndex, 0] = _samplesX.Median();
-                    _calibPoints[_calibPointIndex, 1] = _samplesY.Median();
-                    _calibPoints[_calibPointIndex, 2] = _samplesZ.Median();
+                    _spacePoints[_calibPointIndex] = new SpacePoint(
+                        _samplesX.Median(), _samplesY.Median(), _samplesZ.Median());
 
                     // get ready for the next point
                     _sampleIndex = 0;
@@ -141,12 +148,12 @@ namespace FogControlWithKinect.Services
             Completed = 4,		// The calibration is completed
         };
 
-        const double SAFETY_ZONE_RADIUS = 0.15; // units of Kinect CameraPoint
+        const double SAFETY_ZONE_RADIUS = 0.15; // meters
         const int CALIBRATOR_SAMPLES_PER_POINT = 11;
 
-        readonly double _distanceToScreen;
+        readonly MappingService _mapper;
 
-        readonly double[,] _calibPoints = new double[CALIBRATOR_POINT_COUNT, 3];
+        readonly SpacePoint[] _spacePoints = new SpacePoint[CALIBRATOR_POINT_COUNT];
         readonly double[] _samplesX = new double[CALIBRATOR_SAMPLES_PER_POINT];
         readonly double[] _samplesY = new double[CALIBRATOR_SAMPLES_PER_POINT];
         readonly double[] _samplesZ = new double[CALIBRATOR_SAMPLES_PER_POINT];

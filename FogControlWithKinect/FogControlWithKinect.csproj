@@ -114,6 +114,8 @@
     <Compile Include="CalibrationWindow.xaml.cs">
       <DependentUpon>CalibrationWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\ScreenPoint.cs" />
+    <Compile Include="Models\SpacePoint.cs" />
     <Compile Include="Services\CalibrationService.cs" />
     <Compile Include="Services\HandTipService.cs" />
     <Compile Include="Services\LowPassFilter.cs" />

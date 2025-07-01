@@ -48,14 +48,10 @@ namespace FogControlWithKinect
 
         public double DistanceToScreen
         {
-            get => _distanceToScreen;
+            get => _mappingService?.DistanceToScreen ?? 0;
             set
             {
-                _distanceToScreen = value;
-                if (_skeletonPainter != null)
-                {
-                    _skeletonPainter.DistanceToScreen = _distanceToScreen;
-                }
+                _mappingService.DistanceToScreen = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DistanceToScreen)));
             }
         }
@@ -66,7 +62,7 @@ namespace FogControlWithKinect
 
             if (IsCalibrating)
             {
-                _calibrationService = new CalibrationService(_distanceToScreen);
+                _calibrationService = new CalibrationService(_mappingService);
                 _handTipService.Start(_hand);
 
                 _calibPointIndex = 0;
@@ -93,29 +89,29 @@ namespace FogControlWithKinect
         {
             InitializeComponent();
 
+            _mappingService = new MappingService(App.CalibrationFileName);
             _handTipService = handTipService;
             _hand = hand;
 
-            MappingService mapper = new MappingService(App.CalibrationFileName);
-            if (mapper.IsReady)
-            {
-                DistanceToScreen = mapper.DistanceToScreen;
-            }
-
             var frameDescription = _handTipService.FrameDescription;
-            _skeletonPainter = new SkeletonPainter(frameDescription.Width, frameDescription.Height, _hand, _distanceToScreen);
+            _skeletonPainter = new SkeletonPainter(frameDescription.Width, frameDescription.Height, _hand)
+            {
+                MappingService = _mappingService,
+            };
 
             imgSkeleton.Source = _skeletonPainter.ImageSource;
 
             _handTipService.FrameArrived += HandTipService_FrameArrived;
             _handTipService.TipLocationChanged += HandTipService_TipLocationChanged;
+
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DistanceToScreen)));
         }
 
         private void HandTipService_FrameArrived(object sender, HandTipService.FrameArrivedEventArgs e)
         {
             Dispatcher.Invoke(() =>
             {
-                _skeletonPainter.Draw(e.Bodies, (pt) => _handTipService.MapPoint(pt));
+                _skeletonPainter.Draw(e.Bodies, (pt) => _handTipService.SpaceToPlane(pt));
             });
         }
 
@@ -129,6 +125,7 @@ namespace FogControlWithKinect
             CalibrationPoint.BottomRight,
         };
 
+        readonly MappingService _mappingService;
         readonly HandTipService _handTipService;
         readonly SkeletonPainter _skeletonPainter;
         readonly Hand _hand;
@@ -140,15 +137,12 @@ namespace FogControlWithKinect
         bool _isCalibrating = false;
         bool _isVerifying = false;
         int _calibPointIndex = -1;
-        double _distanceToScreen = 2.15; // Default distance to screen in meters
 
         public bool VerifyCalibration()
         {
             _mouseController = new MouseController(
-                InterationMethod.Touch,
-                new MappingService(_calibrationService),
-                App.PointSmoother
-            );
+                InterationMethod.Move,
+                new MappingService(_calibrationService.SpacePoints, _mappingService.DistanceToScreen));
 
             _isVerifying = true;
 
@@ -168,12 +162,7 @@ namespace FogControlWithKinect
             {
                 if (_isVerifying)
                 {
-                    double depth = App.DepthSmoother.Filter(e.Location.Z);
-                    _mouseController?.SetPosition(
-                        e.Location.X,
-                        e.Location.Y,
-                        depth
-                    );
+                    _mouseController?.SetPosition(e.Location);
                 }
                 else
                 {

@@ -1,7 +1,7 @@
-﻿using Microsoft.Kinect;
+﻿using FogControlWithKinect.Models;
+using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
-using System.Windows;
 using System.Windows.Media;
 
 namespace FogControlWithKinect.Services
@@ -13,18 +13,17 @@ namespace FogControlWithKinect.Services
         /// </summary>
         public DrawingImage ImageSource { get; }
 
-        public double? DistanceToScreen { get; set; }
-
         public Hand Hand { get; set; }
 
-        public SkeletonPainter(int displayWidth, int displayHeight, Hand hand, double? distanceToScreen = null)
+        public MappingService MappingService { get; set; } = null;
+
+        public SkeletonPainter(int displayWidth, int displayHeight, Hand hand)
         {
-            DistanceToScreen = distanceToScreen;
             Hand = hand;
 
             _displayWidth = displayWidth;
             _displayHeight = displayHeight;
-            _rect = new Rect(0.0, 0.0, _displayWidth, _displayHeight);
+            _rect = new System.Windows.Rect(0.0, 0.0, _displayWidth, _displayHeight);
 
             _drawingGroup = new DrawingGroup();
 
@@ -59,7 +58,7 @@ namespace FogControlWithKinect.Services
                     DrawClippedEdges(body, dc);
 
                     // Joint points on the screen
-                    Dictionary<JointType, Point> screenJointPoints = new Dictionary<JointType, Point>();
+                    var screenJointPoints = new Dictionary<JointType, ScreenPoint>();
 
                     foreach (var joint in body.Joints)
                     {
@@ -72,16 +71,15 @@ namespace FogControlWithKinect.Services
                         }
 
                         DepthSpacePoint depthSpacePoint = mapPoint(position);
-                        screenJointPoints[joint.Key] = new Point(depthSpacePoint.X, depthSpacePoint.Y);
+                        screenJointPoints[joint.Key] = new ScreenPoint(depthSpacePoint.X, depthSpacePoint.Y);
                     }
 
                     DrawBody(body.Joints, screenJointPoints, dc, drawPen);
 
-                    var handTipJointType = HandTipService.HandToTipJoint(Hand);
-                    if (handTipJointType == JointType.HandTipLeft)
-                        DrawHand(screenJointPoints[JointType.HandTipLeft], body.Joints[JointType.HandTipLeft].Position, dc);
-                    else
-                        DrawHand(screenJointPoints[JointType.HandTipRight], body.Joints[JointType.HandTipRight].Position, dc);
+                    var handTipJointType = HandTipService.HandToJointType(Hand);
+                    var spacePoint = SpacePoint.From(body.Joints[handTipJointType].Position);
+
+                    DrawHand(screenJointPoints[handTipJointType], spacePoint, dc);
                 }
 
                 // prevent drawing outside of our render area
@@ -161,7 +159,7 @@ namespace FogControlWithKinect.Services
 
         readonly int _displayHeight;
         readonly int _displayWidth;
-        readonly Rect _rect;
+        readonly System.Windows.Rect _rect;
 
         /// <summary>
         /// Draws a body
@@ -170,7 +168,7 @@ namespace FogControlWithKinect.Services
         /// <param name="jointPoints">translated positions of joints to draw</param>
         /// <param name="drawingContext">drawing context to draw to</param>
         /// <param name="drawingPen">specifies color to draw a specific body</param>
-        private void DrawBody(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, Point> jointPoints,
+        private void DrawBody(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, ScreenPoint> jointPoints,
             DrawingContext drawingContext, Pen drawingPen)
         {
             // Draw the bones
@@ -201,26 +199,28 @@ namespace FogControlWithKinect.Services
 
                 if (drawBrush != null)
                 {
-                    drawingContext.DrawEllipse(drawBrush, null, jointPoints[jointType], JointThickness, JointThickness);
+                    var center = new System.Windows.Point(jointPoints[jointType].X, jointPoints[jointType].Y);
+                    drawingContext.DrawEllipse(drawBrush, null, center, JointThickness, JointThickness);
                 }
             }
         }
 
-        private void DrawHand(Point handPosition, CameraSpacePoint camPosition, DrawingContext drawingContext)
+        private void DrawHand(ScreenPoint handPosition, SpacePoint spacePoint, DrawingContext drawingContext)
         {
-            if (DistanceToScreen != null)
-            {
-                double size = Math.Min(
-                    HandSize,
-                    Math.Abs(camPosition.Z - DistanceToScreen ?? 0) * HandSizeScale + 5
-                );
-                Brush brush = camPosition.Z > DistanceToScreen ? _handOutsideBrush : _handInsideBrush;
+            var center = new System.Windows.Point(handPosition.X, handPosition.Y);
 
-                drawingContext.DrawEllipse(brush, null, handPosition, size, size);
+            if (MappingService != null)
+            {
+                double size = Math.Min(HandSize,
+                    Math.Abs(MappingService.GetDistanceFromScreen(spacePoint)) * HandSizeScale + 5
+                );
+
+                Brush brush = MappingService.IsInFog(spacePoint) ? _handInsideBrush: _handOutsideBrush;
+                drawingContext.DrawEllipse(brush, null, center, size, size);
             }
             else
             {
-                drawingContext.DrawEllipse(_handOutsideBrush, null, handPosition, HandSize, HandSize);
+                drawingContext.DrawEllipse(_handOutsideBrush, null, center, HandSize, HandSize);
             }
         }
 
@@ -233,7 +233,7 @@ namespace FogControlWithKinect.Services
         /// <param name="jointType1">second joint of bone to draw</param>
         /// <param name="drawingContext">drawing context to draw to</param>
         /// /// <param name="drawingPen">specifies color to draw a specific bone</param>
-        private void DrawBone(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, Point> jointPoints,
+        private void DrawBone(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, ScreenPoint> jointPoints,
             JointType jointType0, JointType jointType1, DrawingContext drawingContext, Pen drawingPen)
         {
             Joint joint0 = joints[jointType0];
@@ -253,7 +253,9 @@ namespace FogControlWithKinect.Services
                 drawPen = drawingPen;
             }
 
-            drawingContext.DrawLine(drawPen, jointPoints[jointType0], jointPoints[jointType1]);
+            var from = new System.Windows.Point(jointPoints[jointType0].X, jointPoints[jointType0].Y);
+            var to = new System.Windows.Point(jointPoints[jointType1].X, jointPoints[jointType1].Y);
+            drawingContext.DrawLine(drawPen, from, to);
         }
 
         /// <summary>
@@ -270,7 +272,7 @@ namespace FogControlWithKinect.Services
                 drawingContext.DrawRectangle(
                     Brushes.Red,
                     null,
-                    new Rect(0, _displayHeight - ClipBoundsThickness, _displayWidth, ClipBoundsThickness));
+                    new System.Windows.Rect(0, _displayHeight - ClipBoundsThickness, _displayWidth, ClipBoundsThickness));
             }
 
             if (clippedEdges.HasFlag(FrameEdges.Top))
@@ -278,7 +280,7 @@ namespace FogControlWithKinect.Services
                 drawingContext.DrawRectangle(
                     Brushes.Red,
                     null,
-                    new Rect(0, 0, _displayWidth, ClipBoundsThickness));
+                    new System.Windows.Rect(0, 0, _displayWidth, ClipBoundsThickness));
             }
 
             if (clippedEdges.HasFlag(FrameEdges.Left))
@@ -286,7 +288,7 @@ namespace FogControlWithKinect.Services
                 drawingContext.DrawRectangle(
                     Brushes.Red,
                     null,
-                    new Rect(0, 0, ClipBoundsThickness, _displayHeight));
+                    new System.Windows.Rect(0, 0, ClipBoundsThickness, _displayHeight));
             }
 
             if (clippedEdges.HasFlag(FrameEdges.Right))
@@ -294,7 +296,7 @@ namespace FogControlWithKinect.Services
                 drawingContext.DrawRectangle(
                     Brushes.Red,
                     null,
-                    new Rect(_displayWidth - ClipBoundsThickness, 0, ClipBoundsThickness, _displayHeight));
+                    new System.Windows.Rect(_displayWidth - ClipBoundsThickness, 0, ClipBoundsThickness, _displayHeight));
             }
         }
     }
