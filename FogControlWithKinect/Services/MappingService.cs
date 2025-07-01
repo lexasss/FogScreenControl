@@ -1,6 +1,7 @@
 ﻿using FogControlWithKinect.Models;
 using System;
 using System.IO;
+using System.Windows;
 
 namespace FogControlWithKinect.Services
 {
@@ -14,7 +15,7 @@ namespace FogControlWithKinect.Services
 
         private MappingService()
         {
-            _mapper = new Mappers.NaiveMapper();
+            _mapper = new Mappers.Projective2D();
         }
 
         public MappingService(string calibFileName) : this()
@@ -51,7 +52,7 @@ namespace FogControlWithKinect.Services
             return _mapper.Map(cameraPoint);
         }
 
-        public bool IsInFog(SpacePoint point) => _mapper.IsInFog(point, DistanceToScreen);
+        public bool IsInFog(SpacePoint spacePoint) => _mapper.GetDistanceFromScreen(spacePoint, DistanceToScreen) < 0;
 
         public double GetDistanceFromScreen(SpacePoint point) => _mapper.GetDistanceFromScreen(point, DistanceToScreen);
 

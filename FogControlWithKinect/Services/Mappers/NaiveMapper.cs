@@ -27,9 +27,6 @@ namespace FogControlWithKinect.Services.Mappers
             (spacePoint.Y - _offsetY) * _scaleY
         );
 
-        public bool IsInFog(SpacePoint spacePoint, double distanceToScreen) => 
-            spacePoint.Z < distanceToScreen;
-
         public double GetDistanceFromScreen(SpacePoint spacePoint, double distanceToScreen) =>
             spacePoint.Z - distanceToScreen;
 

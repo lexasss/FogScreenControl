@@ -6,7 +6,6 @@ namespace FogControlWithKinect.Services.Mappers
     {
         void Configure(ScreenPoint[] screenPoints, SpacePoint[] spacePoints);
         ScreenPoint Map(SpacePoint spacePoint);
-        bool IsInFog(SpacePoint spacePoint, double distanceToScreen);
         double GetDistanceFromScreen(SpacePoint spacePoint, double distanceToScreen);
     }
 }
