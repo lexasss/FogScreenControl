@@ -16,11 +16,13 @@ namespace FogControlWithKinect
 
         public int CalibrationPointCount
         {
-            get => _calibrationPointCount;
+            get => Properties.Settings.Default.CalibrationPointCount;
             set
             {
-                _calibrationPointCount = value;
-                _calibrationPoints = _calibrationPointsLists[_calibrationPointCount];
+                Properties.Settings.Default.CalibrationPointCount = value;
+                Properties.Settings.Default.Save();
+
+                _calibrationPoints = _calibrationPointsLists[value];
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CalibrationPointCount)));
             }
         }
@@ -78,7 +80,7 @@ namespace FogControlWithKinect
 
             if (IsCalibrating)
             {
-                _calibrationService = new CalibrationService(_mappingService, _calibrationPointCount);
+                _calibrationService = new CalibrationService(_mappingService, CalibrationPointCount);
                 _handTipService.Start(_hand);
 
                 _calibPointIndex = 0;
@@ -105,8 +107,10 @@ namespace FogControlWithKinect
         {
             InitializeComponent();
 
-            _calibrationPointCount = _calibrationPointsLists.First().Key;
-            _calibrationPoints = _calibrationPointsLists[_calibrationPointCount];
+            if (!_calibrationPointsLists.Keys.Contains(CalibrationPointCount))
+            {
+                CalibrationPointCount = _calibrationPointsLists.First().Key;
+            }
 
             _mappingService = new MappingService(App.CalibrationFileName);
             _handTipService = handTipService;
@@ -174,13 +178,11 @@ namespace FogControlWithKinect
         readonly SkeletonPainter _skeletonPainter;
         readonly Hand _hand;
 
-        int _calibrationPointCount;
-
         MouseController _mouseController = null;
         CalibrationService _calibrationService = null;
 
-        CalibrationPoint[] _calibrationPoints;
         CalibrationPoint _calibrationPoint = CalibrationPoint.Undefined;
+        CalibrationPoint[] _calibrationPoints;
 
         bool _isCalibrating = false;
         bool _isVerifying = false;
@@ -224,7 +226,7 @@ namespace FogControlWithKinect
                     {
                         Utils.Sounds.CalibPointDone.Play();
 
-                        CalibrationPoint = ++_calibPointIndex < _calibrationPointCount
+                        CalibrationPoint = ++_calibPointIndex < CalibrationPointCount
                             ? _calibrationPoints[_calibPointIndex]
                             : CalibrationPoint.Undefined;
                     }

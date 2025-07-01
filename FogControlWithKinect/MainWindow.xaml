@@ -62,8 +62,7 @@
                     <CheckBox IsEnabled="False"
                               Content="Move"
                               IsChecked="true"/>
-                    <CheckBox x:Name="chkMouseDrag"
-                              Content="Click-n-Drag"
+                    <CheckBox Content="Click-n-Drag"
                               Tag="Touch"
                               IsChecked="{Binding IsClickAndDrag, Mode=TwoWay}"/>
                 </StackPanel>
@@ -76,7 +75,7 @@
                 <Label Style="{StaticResource Header}"
                        Content="Hand"/>
                 <CheckBox Style="{StaticResource Switch}"
-                          IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
+                          IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}, Mode=TwoWay}"
                           Content="Right"
                           Tag="Left"
                           IsChecked="{Binding IsHandRight}"
@@ -92,7 +91,7 @@
                    Content="Options"/>
                 <StackPanel HorizontalAlignment="Center">
                     <CheckBox Content="Use sounds"
-                              IsChecked="{Binding IsHandRight}"
+                              IsChecked="{Binding IsMouseEventSoundEnabled, Mode=TwoWay}"
                               HorizontalAlignment="Stretch"/>
                 </StackPanel>
             </StackPanel>

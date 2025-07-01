@@ -23,20 +23,22 @@ namespace FogControlWithKinect
         }
         public bool IsClickAndDrag
         {
-            get => _isClickAndDrag;
+            get => Properties.Settings.Default.UseClickAndDrop;
             set
             {
-                _isClickAndDrag = value;
+                Properties.Settings.Default.UseClickAndDrop = value;
+                Properties.Settings.Default.Save();
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsClickAndDrag)));
             }
         }
-        public bool IsSoundEnabled
+        public bool IsMouseEventSoundEnabled
         {
-            get => _isSoundEnabed;
+            get => Properties.Settings.Default.UseMouseEventSounds;
             set
             {
-                _isSoundEnabed = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSoundEnabled)));
+                Properties.Settings.Default.UseMouseEventSounds = value;
+                Properties.Settings.Default.Save();
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsMouseEventSoundEnabled)));
             }
         }
         public bool IsReady
@@ -80,11 +82,11 @@ namespace FogControlWithKinect
                     return;
                 }
 
-                var interactionMethod = chkMouseDrag.IsChecked == true ? Enums.InterationMethod.ClickAndDrag : Enums.InterationMethod.Move;
+                var interactionMethod = IsClickAndDrag ? Enums.InterationMethod.ClickAndDrag : Enums.InterationMethod.Move;
 
                 _mouseController = new Services.MouseController(interactionMethod, mapper)
                 {
-                    IsPlayingSoundOnEnterFog = IsSoundEnabled
+                    IsPlayingSoundOnMouseEvents = IsMouseEventSoundEnabled
                 };
 
                 _skeletonPainter.MappingService = mapper;
@@ -123,8 +125,6 @@ namespace FogControlWithKinect
         Services.SkeletonPainter _skeletonPainter = null;
 
         Enums.Hand _hand = Enums.Hand.Right;
-        bool _isClickAndDrag = true;
-        bool _isSoundEnabed = true;
 
         bool _isReady = false;
         bool _isRunning = false;

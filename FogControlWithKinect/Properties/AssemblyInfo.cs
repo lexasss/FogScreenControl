@@ -7,12 +7,12 @@ using System.Windows;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("FogControlWithKinect")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Fog Control with Kinect")]
+[assembly: AssemblyDescription("Kinect-based mouse control on a PC display projected to a fog screen")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Tampere University")]
 [assembly: AssemblyProduct("FogControlWithKinect")]
-[assembly: AssemblyCopyright("Copyright ©  2025")]
+[assembly: AssemblyCopyright("Oleg Spakov © 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

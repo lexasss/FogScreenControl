@@ -5,7 +5,7 @@ namespace FogControlWithKinect.Services
 {
     public class MouseController
     {
-        public bool IsPlayingSoundOnEnterFog { get; set; } = false;
+        public bool IsPlayingSoundOnMouseEvents { get; set; } = false;
 
         public MouseController(InterationMethod method, MappingService mapper)
         {
@@ -57,7 +57,7 @@ namespace FogControlWithKinect.Services
 
                     Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTDOWN, _x, _y, 0, 0);
 
-                    if (IsPlayingSoundOnEnterFog)
+                    if (IsPlayingSoundOnMouseEvents)
                     {
                         Utils.Sounds.In.Play();
                     }
@@ -80,7 +80,7 @@ namespace FogControlWithKinect.Services
 
                     Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTUP, _x, _y, 0, 0);
 
-                    if (IsPlayingSoundOnEnterFog)
+                    if (IsPlayingSoundOnMouseEvents)
                     {
                         Utils.Sounds.Out.Play();
                     }
