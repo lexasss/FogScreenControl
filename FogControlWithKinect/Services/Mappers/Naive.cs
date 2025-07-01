@@ -2,14 +2,8 @@
 
 namespace FogControlWithKinect.Services.Mappers
 {
-    internal class NaiveMapper : IMapper
+    internal class Naive : IMapper
     {
-        public NaiveMapper()
-        {
-            _screenWidth = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CXSCREEN);
-            _screenHeight = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CYSCREEN);
-        }
-
         public void Configure(ScreenPoint[] screenPoints, SpacePoint[] spacePoints)
         {
             _screenWidth = screenPoints[1].X - screenPoints[0].X;
@@ -32,8 +26,8 @@ namespace FogControlWithKinect.Services.Mappers
 
         // Internal
 
-        double _screenWidth;
-        double _screenHeight;
+        double _screenWidth = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CXSCREEN);
+        double _screenHeight = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CYSCREEN);
 
         double _scaleX = 1;
         double _scaleY = 1;
