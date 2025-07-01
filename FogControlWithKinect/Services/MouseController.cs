@@ -25,16 +25,6 @@ namespace FogControlWithKinect.Services
         {
             _method = method;
             _mapper = mapper;
-
-            try
-            {
-                _soundPlayer = new SoundPlayer("Assets/Sounds/sound.wav");
-                _soundPlayer.LoadAsync();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[ERROR] Failed to load sound file: {ex.Message}");
-            }
         }
 
         public void SetPosition(SpacePoint spacePoint)
@@ -62,8 +52,6 @@ namespace FogControlWithKinect.Services
         readonly InterationMethod _method;
         readonly MappingService _mapper;
 
-        readonly SoundPlayer _soundPlayer = null;
-
         bool _isInteracting = false;
         int _x = 0;
         int _y = 0;
@@ -85,7 +73,7 @@ namespace FogControlWithKinect.Services
 
                     if (IsPlayingSoundOnEnterFog)
                     {
-                        _soundPlayer.Play();
+                        App.ForEnterSound.Play();
                     }
                 }
             }

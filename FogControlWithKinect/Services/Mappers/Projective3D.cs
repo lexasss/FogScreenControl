@@ -11,36 +11,34 @@ namespace FogControlWithKinect.Services.Mappers
             if (spacePoints.Length != 4 || screenPoints.Length != 4)
                 throw new ArgumentException("Exactly 4 point correspondences are required.");
 
-            var A = Matrix<double>.Build.Dense(8, 12);
+            int n = spacePoints.Length;
 
-            for (int i = 0; i < 4; i++)
+            // Build matrix A (2n x 8) and vector b (2n x 1)
+            var A = Matrix<double>.Build.Dense(2 * n, 8);
+            var b = Vector<double>.Build.Dense(2 * n);
+
+            for (int i = 0; i < n; i++)
             {
-                var x = spacePoints[i].X;
-                var y = spacePoints[i].Y;
-                var z = spacePoints[i].Z;
-                var a = screenPoints[i].X;
-                var b = screenPoints[i].Y;
+                double X = spacePoints[i].X, Y = spacePoints[i].Y, Z = spacePoints[i].Z;
+                double x = screenPoints[i].X, y = screenPoints[i].Y;
 
-                A.SetRow(2 * i, new double[] {
-                    x, y, z, 1, 0, 0, 0, 0, -a * x, -a * y, -a * z, -a
-                });
+                // Row 2i → x equation
+                A.SetRow(2 * i, new[] { X, Y, Z, 1, 0, 0, 0, 0 });
+                b[2 * i] = x;
 
-                A.SetRow(2 * i + 1, new double[] {
-                    0, 0, 0, 0, x, y, z, 1, -b * x, -b * y, -b * z, -b
-                });
+                // Row 2i+1 → y equation
+                A.SetRow(2 * i + 1, new[] { 0, 0, 0, 0, X, Y, Z, 1 });
+                b[2 * i + 1] = y;
             }
 
-            // Solve A * p = 0 using SVD: solution is last column of V (right singular vectors)
-            var svd = A.Svd(true);
+            // Solve A * p = b using least squares
+            Vector<double> p = A.Solve(b); // 8 parameters
 
-            var p = svd.VT.Row(svd.VT.RowCount - 1); // Smallest singular vector (last column of V == last row of VT)
-            _projectionMatrix = Matrix<double>.Build.Dense(3, 4);
-
-            // Reshape p (12-vector) into 3x4 matrix
-            for (int i = 0; i < 12; i++)
-            {
-                _projectionMatrix[i / 4, i % 4] = p[i];
-            }
+            // Reshape to 2x4 matrix
+            _projectionMatrix = Matrix<double>.Build.DenseOfRowArrays(
+                new[] { p[0], p[1], p[2], p[3] },
+                new[] { p[4], p[5], p[6], p[7] }
+            );
         }
 
         public ScreenPoint Map(SpacePoint spacePoint)
@@ -48,15 +46,9 @@ namespace FogControlWithKinect.Services.Mappers
             if (_projectionMatrix == null)
                 throw new InvalidOperationException("Mapper is not configured. Call Configure() first.");
 
-            // As of July 1 2025, it does not work
-            var x = Vector<double>.Build.DenseOfArray(new double[] { spacePoint.X, spacePoint.Y, spacePoint.Z, 1 });
-            var projected = _projectionMatrix * x;
-            double w = projected[2];
-
-            if (Math.Abs(w) < 1e-8)     // Projection resulted in zero homogeneous coordinate.
-                return ScreenPoint.Zero;
-
-            return new ScreenPoint(projected[0] / w, projected[1] / w);
+            var vec = Vector<double>.Build.DenseOfArray(new[] { spacePoint.X, spacePoint.Y, spacePoint.Z, 1.0 });
+            var result = _projectionMatrix * vec;
+            return new ScreenPoint(result[0], result[1]);
         }
 
         public double GetDistanceFromScreen(SpacePoint spacePoint, double distanceToScreen) =>

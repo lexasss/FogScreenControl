@@ -174,6 +174,8 @@ namespace FogControlWithKinect
                     }
                     else if (result == CalibrationService.Event.PointEnd)
                     {
+                        App.ForEnterSound.Play();
+
                         CalibrationPoint = ++_calibPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT
                             ? _calibrationPoints[_calibPointIndex]
                             : CalibrationPoint.Undefined;

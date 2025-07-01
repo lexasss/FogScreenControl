@@ -1,13 +1,13 @@
 ﻿using FogControlWithKinect.Models;
 using System;
 using System.IO;
-using System.Windows;
 
 namespace FogControlWithKinect.Services
 {
     public class MappingService
     {
         public bool IsReady { get; private set; } = false;
+
         /// <summary>
         /// Distance between the tracking camera and the screen in meters.
         /// </summary>
@@ -36,8 +36,7 @@ namespace FogControlWithKinect.Services
             DistanceToScreen = distanceToScreen;
 
             var screenPoints = ConstructScreenPoints();
-            var calibPoints = spacePoints;
-            _mapper.Configure(screenPoints, calibPoints);
+            _mapper.Configure(screenPoints, spacePoints);
 
             IsReady = true;
         }
@@ -64,10 +63,10 @@ namespace FogControlWithKinect.Services
 
         private void LoadFromFile(string calibFileName)
         {
-            SpacePoint[] calibPoints = new SpacePoint[CalibrationService.CALIBRATOR_POINT_COUNT];
+            SpacePoint[] spacePoints = new SpacePoint[CalibrationService.CALIBRATOR_POINT_COUNT];
             ScreenPoint[] screenPoints = new ScreenPoint[CalibrationService.CALIBRATOR_POINT_COUNT];
 
-            int calibPointIndex = 0;
+            int spacePointIndex = 0;
             int screenPointIndex = 0;
 
             using (var calibFile = new StreamReader(calibFileName))
@@ -76,9 +75,9 @@ namespace FogControlWithKinect.Services
                 {
                     var line = calibFile.ReadLine();
                     var p = line?.Split(' ');
-                    if (p?.Length == 3 && calibPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT) // tracker points
+                    if (p?.Length == 3 && spacePointIndex < CalibrationService.CALIBRATOR_POINT_COUNT) // tracker points
                     {
-                        calibPoints[calibPointIndex++] = new SpacePoint(double.Parse(p[0]), double.Parse(p[1]), double.Parse(p[2]));
+                        spacePoints[spacePointIndex++] = new SpacePoint(double.Parse(p[0]), double.Parse(p[1]), double.Parse(p[2]));
                     }
                     else if (p?.Length == 2 && screenPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT)    // screen points
                     {
@@ -95,12 +94,12 @@ namespace FogControlWithKinect.Services
             {
                 screenPoints = ConstructScreenPoints();
             }
-            if (calibPointIndex < CalibrationService.CALIBRATOR_POINT_COUNT)
+            if (spacePointIndex < CalibrationService.CALIBRATOR_POINT_COUNT)
             {
                 return;
             }
 
-            _mapper.Configure(screenPoints, calibPoints);
+            _mapper.Configure(screenPoints, spacePoints);
 
             IsReady = true;
         }

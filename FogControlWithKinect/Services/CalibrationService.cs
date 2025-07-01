@@ -123,8 +123,7 @@ namespace FogControlWithKinect.Services
 
                 if (_sampleIndex == CALIBRATOR_SAMPLES_PER_POINT)
                 {
-                    _spacePoints[_calibPointIndex] = new SpacePoint(
-                        _samplesX.Median(), _samplesY.Median(), _samplesZ.Median());
+                    _spacePoints[_calibPointIndex] = new SpacePoint(_samplesX.Median(), _samplesY.Median(), _samplesZ.Median());
 
                     // get ready for the next point
                     _sampleIndex = 0;
