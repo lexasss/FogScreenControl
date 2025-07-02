@@ -16,7 +16,7 @@ To compile the project, you will have to install
 
 ## Installation
 
-Download the [installation package](https://github.com/lexasss/FogControlWithKinect/releases) and run the executable file.
+Download the [installation package](https://github.com/lexasss/FogScreenControl/releases) and run the executable file.
 
 If the application complains about MS .NET Framework 4.8 missing in the system. Install the [.NET Framework runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/net48) before trying again.
 
