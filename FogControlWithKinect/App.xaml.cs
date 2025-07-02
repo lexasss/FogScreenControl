@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace FogControlWithKinect
+namespace FogScreenControl
 {
     public partial class App : Application
     {

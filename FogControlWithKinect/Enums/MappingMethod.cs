@@ -1,4 +1,4 @@
-﻿namespace FogControlWithKinect.Enums
+﻿namespace FogScreenControl.Enums
 {
     public enum MappingMethod
     {

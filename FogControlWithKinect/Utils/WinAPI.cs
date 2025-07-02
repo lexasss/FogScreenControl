@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace FogControlWithKinect.Utils
+namespace FogScreenControl.Utils
 {
     internal static class WinAPI
     {

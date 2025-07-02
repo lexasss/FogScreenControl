@@ -1,7 +1,7 @@
-﻿using FogControlWithKinect.Enums;
-using FogControlWithKinect.Models;
+﻿using FogScreenControl.Enums;
+using FogScreenControl.Models;
 
-namespace FogControlWithKinect.Services
+namespace FogScreenControl.Services
 {
     public class MouseController
     {

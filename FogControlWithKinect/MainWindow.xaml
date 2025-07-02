@@ -1,30 +1,32 @@
-﻿<Window x:Class="FogControlWithKinect.MainWindow"
+﻿<Window x:Class="FogScreenControl.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-        xmlns:local="clr-namespace:FogControlWithKinect"
-        xmlns:utils="clr-namespace:FogControlWithKinect.Utils"
-        xmlns:enums="clr-namespace:FogControlWithKinect.Enums"
+        xmlns:local="clr-namespace:FogScreenControl"
+        xmlns:utils="clr-namespace:FogScreenControl.Utils"
+        xmlns:enums="clr-namespace:FogScreenControl.Enums"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Style="{StaticResource MaterialDesignWindow}"
-        Title="Fog Control With Kinect"
-        MinHeight="496"
-        MinWidth="320"
-        Height="520"
-        Width="400"
-        Loaded="Window_Loaded"
-        Closed="Window_Closed" Icon="/Assets/Images/icon.png">
+        Title="Fog Screen Control"
+        MinHeight="546"
+        MinWidth="380"
+        Height="624"
+        Width="492"
+        Icon="/Assets/Images/icon.png"
+        Closed="Window_Closed">
+    
     <Window.Resources>
         <dxmvvm:BooleanNegationConverter x:Key="Inverted"/>
         
         <Style x:Key="Header" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
         <Style x:Key="Status" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
@@ -45,95 +47,118 @@
                 <x:Type TypeName="enums:MappingMethod"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+        <ObjectDataProvider x:Key="TrackerTypes" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="enums:TrackerType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </Window.Resources>
 
-    <Grid IsEnabled="{Binding IsReady}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
+    <Grid>
+        <Grid IsEnabled="{Binding IsReady}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
 
-        <Border Grid.Row="0" Grid.Column="0"
-                Style="{StaticResource VerticalSeparator}"
-                BorderThickness="0">
-            <StackPanel Grid.Row="0" Grid.Column="0">
-                <Label Style="{StaticResource Header}"
-                       Content="Mouse operations"/>
-                <StackPanel HorizontalAlignment="Center"
-                            IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}">
-                    <CheckBox IsEnabled="False"
-                              Content="Move"
-                              IsChecked="true"/>
-                    <CheckBox Content="Click-n-Drag"
-                              Tag="Touch"
-                              IsChecked="{Binding IsClickAndDrag, Mode=TwoWay}"/>
+            <Border Grid.Row="0" Grid.Column="0"
+                    Style="{StaticResource VerticalSeparator}"
+                    BorderThickness="0">
+                <StackPanel Grid.Row="0" Grid.Column="0">
+                    <Label Style="{StaticResource Header}"
+                           Content="Mouse operations"/>
+                    <StackPanel HorizontalAlignment="Center"
+                                IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}">
+                        <CheckBox IsEnabled="False"
+                                  Content="Move"
+                                  IsChecked="true"/>
+                        <CheckBox Content="Click-n-Drag"
+                                  Tag="Touch"
+                                  IsChecked="{Binding IsClickAndDrag, Mode=TwoWay}"/>
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </Border>
+            </Border>
 
-        <Border Grid.Row="0" Grid.Column="1"
-                Style="{StaticResource VerticalSeparator}">
-            <StackPanel>
-                <Label Style="{StaticResource Header}"
-                       Content="Hand"/>
-                <CheckBox Style="{StaticResource Switch}"
-                          IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}, Mode=TwoWay}"
-                          Content="Right"
-                          Tag="Left"
-                          IsChecked="{Binding IsHandRight}"
-                          HorizontalAlignment="Stretch"
-                          HorizontalContentAlignment="Center"/>
-            </StackPanel>
-        </Border>
-
-        <Border Grid.Row="0" Grid.Column="2"
-                Style="{StaticResource VerticalSeparator}">
-            <StackPanel>
-                <Label Style="{StaticResource Header}"
-                       Content="Options"/>
-                <StackPanel HorizontalAlignment="Center">
-                    <WrapPanel>
-                        <Label Content="Mapper"/>
-                        <ComboBox ItemsSource="{Binding Source={StaticResource MappingMethods}}"
-                                  SelectedItem="{Binding MappingMethod, Mode=TwoWay}"
-                                  IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
-                                  Width="84"
-                                  Margin="4,0,0,4"/>
-                    </WrapPanel>
-                    <CheckBox Content="Use sounds"
-                              IsChecked="{Binding IsMouseEventSoundEnabled, Mode=TwoWay}"/>
+            <Border Grid.Row="0" Grid.Column="1"
+                    Style="{StaticResource VerticalSeparator}">
+                <StackPanel>
+                    <Label Style="{StaticResource Header}"
+                           Content="Hand"/>
+                    <CheckBox Style="{StaticResource Switch}"
+                              IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}, Mode=TwoWay}"
+                              Content="Right"
+                              Tag="Left"
+                              IsChecked="{Binding IsHandRight}"
+                              HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Center"/>
                 </StackPanel>
+            </Border>
+
+            <Border Grid.Row="0" Grid.Column="2"
+                    Style="{StaticResource VerticalSeparator}">
+                <StackPanel>
+                    <Label Style="{StaticResource Header}"
+                           Content="Options"/>
+                    <StackPanel HorizontalAlignment="Center">
+                        <WrapPanel>
+                            <Label Content="Mapper:"/>
+                            <ComboBox ItemsSource="{Binding Source={StaticResource MappingMethods}}"
+                                      SelectedItem="{Binding MappingMethod, Mode=TwoWay}"
+                                      IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
+                                      Width="72"
+                                      Margin="4,0,0,4"/>
+                        </WrapPanel>
+                        <CheckBox Content="Use sounds"
+                                  IsChecked="{Binding IsMouseEventSoundEnabled, Mode=TwoWay}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Viewbox Grid.Row="1" Grid.ColumnSpan="3"
+                     Margin="12"
+                     HorizontalAlignment="Center">
+                <Image x:Name="imgSkeleton" Stretch="UniformToFill"/>
+            </Viewbox>
+
+            <WrapPanel Grid.Row="2" Grid.ColumnSpan="3"
+                        HorizontalAlignment="Center">
+                <Button Content="{Binding ToggleInteractionButtonText, Mode=OneWay}"
+                        Command="{Binding ToggleInteractionCommand}"
+                        Width="160"
+                        Margin="5"/>
+                <Button Content="Calibrate"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
+                        Command="{Binding CalibrateCommand}"
+                        Width="160"
+                        Margin="5"/>
+            </WrapPanel>
+
+            <Label Grid.Row="3" Grid.ColumnSpan="3"
+                   Style="{StaticResource Status}"
+                   Content="{Binding StatusText}"/>
+        </Grid>
+        <Grid x:Name="pagConnect" Grid.RowSpan="100" Grid.ColumnSpan="100">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Margin="12">
+                <Label Content="Hand tracker"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,6"/>
+                <ComboBox ItemsSource="{Binding Source={StaticResource TrackerTypes}}"
+                          SelectedItem="{Binding TrackerType, Mode=TwoWay}"
+                          Width="120"
+                          Margin="0,0,0,12"/>
+                <Button Content="Connect"
+                        Command="{Binding ConnectCommand}"
+                        Width="120"/>
             </StackPanel>
-        </Border>
-
-        <Viewbox Grid.Row="1" Grid.ColumnSpan="3"
-                 Margin="12"
-                 HorizontalAlignment="Center">
-            <Image x:Name="imgSkeleton" Stretch="UniformToFill"/>
-        </Viewbox>
-
-        <StackPanel Grid.Row="2" Grid.ColumnSpan="3"
-                    HorizontalAlignment="Center">
-            <Button Content="{Binding ToggleInteractionButtonText, Mode=OneWay}"
-                    Command="{Binding ToggleInteractionCommand}"
-                    Width="160"
-                    Margin="5"/>
-            <Button Content="Calibrate"
-                    IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
-                    Command="{Binding CalibrateCommand}"
-                    Width="160"
-                    Margin="5"/>
-        </StackPanel>
-
-        <Label Grid.Row="3" Grid.ColumnSpan="3"
-               Style="{StaticResource Status}"
-               Content="{Binding StatusText}"/>
+        </Grid>
     </Grid>
 </Window>

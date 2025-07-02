@@ -1,11 +1,11 @@
-﻿using FogControlWithKinect.Enums;
-using FogControlWithKinect.Models;
-using Microsoft.Kinect;
+﻿using FogScreenControl.Enums;
+using FogScreenControl.Models;
+using FogScreenControl.Tracker;
 using System;
 using System.Collections.Generic;
 using System.Windows.Media;
 
-namespace FogControlWithKinect.Services
+namespace FogScreenControl.Services
 {
     internal class SkeletonPainter
     {
@@ -41,7 +41,7 @@ namespace FogControlWithKinect.Services
             }
         }
 
-        public void Draw(Body[] bodies, Func<CameraSpacePoint, DepthSpacePoint> mapPoint)
+        public void Draw(Body[] bodies, Func<SpacePoint, ScreenPoint> mapPoint)
         {
             using (DrawingContext dc = _drawingGroup.Open())
             {
@@ -61,21 +61,21 @@ namespace FogControlWithKinect.Services
                     {
                         // sometimes the depth(Z) of an inferred joint may show as negative
                         // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
-                        CameraSpacePoint position = joint.Value.Position;
+                        SpacePoint position = joint.Value.Position;
                         if (position.Z < 0)
                         {
                             position.Z = InferredZPositionClamp;
                         }
 
-                        DepthSpacePoint depthSpacePoint = mapPoint(position);
+                        ScreenPoint depthSpacePoint = mapPoint(position);
                         screenJointPoints[joint.Key] = new ScreenPoint(depthSpacePoint.X, depthSpacePoint.Y);
                     }
 
                     Pen drawPen = _bodyColors[penIndex++];
                     DrawBody(body.Joints, screenJointPoints, dc, drawPen);
 
-                    var handTipJointType = HandTipService.HandToJointType(Hand);
-                    var spacePoint = new SpacePoint().From(body.Joints[handTipJointType].Position);
+                    var handTipJointType = Joint.HandToJointType(Hand);
+                    var spacePoint = body.Joints[handTipJointType].Position;
 
                     DrawHand(screenJointPoints[handTipJointType], spacePoint, dc);
                 }
@@ -91,8 +91,7 @@ namespace FogControlWithKinect.Services
         const double HandSizeScale = 100;
         const double BoneThickness = 6;
         const double JointThickness = 3;
-        const double ClipBoundsThickness = 10;
-        const float InferredZPositionClamp = 0.1f;
+        const double InferredZPositionClamp = 0.1;
 
         readonly Brush _handInsideBrush = new SolidColorBrush(Color.FromArgb(128, 0, 255, 0));
         readonly Brush _handOutsideBrush = new SolidColorBrush(Color.FromArgb(128, 255, 128, 0));
@@ -100,47 +99,47 @@ namespace FogControlWithKinect.Services
         readonly Brush _inferredJointBrush = Brushes.Yellow;
         readonly Pen _inferredBonePen = new Pen(Brushes.Gray, 1);
 
-        readonly List<Tuple<JointType, JointType>> _bones = new List<Tuple<JointType, JointType>>()
+        readonly List<Bone> _bones = new List<Bone>()
         {
             // Torso
-            new Tuple<JointType, JointType>(JointType.Head, JointType.Neck),
-            new Tuple<JointType, JointType>(JointType.Neck, JointType.SpineShoulder),
-            new Tuple<JointType, JointType>(JointType.SpineShoulder, JointType.SpineMid),
-            new Tuple<JointType, JointType>(JointType.SpineMid, JointType.SpineBase),
-            new Tuple<JointType, JointType>(JointType.SpineShoulder, JointType.ShoulderRight),
-            new Tuple<JointType, JointType>(JointType.SpineShoulder, JointType.ShoulderLeft),
-            new Tuple<JointType, JointType>(JointType.SpineBase, JointType.HipRight),
-            new Tuple<JointType, JointType>(JointType.SpineBase, JointType.HipLeft),
+            new Bone(JointType.Head, JointType.Neck),
+            new Bone(JointType.Neck, JointType.SpineShoulder),
+            new Bone(JointType.SpineShoulder, JointType.SpineMid),
+            new Bone(JointType.SpineMid, JointType.SpineBase),
+            new Bone(JointType.SpineShoulder, JointType.ShoulderRight),
+            new Bone(JointType.SpineShoulder, JointType.ShoulderLeft),
+            new Bone(JointType.SpineBase, JointType.HipRight),
+            new Bone(JointType.SpineBase, JointType.HipLeft),
 
             // Right Arm
-            new Tuple<JointType, JointType>(JointType.ShoulderRight, JointType.ElbowRight),
-            new Tuple<JointType, JointType>(JointType.ElbowRight, JointType.WristRight),
+            new Bone(JointType.ShoulderRight, JointType.ElbowRight),
+            new Bone(JointType.ElbowRight, JointType.WristRight),
             /* Original
-            new Tuple<JointType, JointType>(JointType.WristRight, JointType.HandRight),
-            new Tuple<JointType, JointType>(JointType.HandRight, JointType.HandTipRight),
-            new Tuple<JointType, JointType>(JointType.WristRight, JointType.ThumbRight),
+            new Bone(JointType.WristRight, JointType.HandRight),
+            new Bone(JointType.HandRight, JointType.HandTipRight),
+            new Bone(JointType.WristRight, JointType.ThumbRight),
             */
-            new Tuple<JointType, JointType>(JointType.WristRight, JointType.HandTipRight),
+            new Bone(JointType.WristRight, JointType.HandTipRight),
 
             // Left Arm
-            new Tuple<JointType, JointType>(JointType.ShoulderLeft, JointType.ElbowLeft),
-            new Tuple<JointType, JointType>(JointType.ElbowLeft, JointType.WristLeft),
+            new Bone(JointType.ShoulderLeft, JointType.ElbowLeft),
+            new Bone(JointType.ElbowLeft, JointType.WristLeft),
             /* Original
-            new Tuple<JointType, JointType>(JointType.WristLeft, JointType.HandLeft),
-            new Tuple<JointType, JointType>(JointType.HandLeft, JointType.HandTipLeft),
-            new Tuple<JointType, JointType>(JointType.WristLeft, JointType.ThumbLeft),
+            new Bone(JointType.WristLeft, JointType.HandLeft),
+            new Bone(JointType.HandLeft, JointType.HandTipLeft),
+            new Bone(JointType.WristLeft, JointType.ThumbLeft),
             */
-            new Tuple<JointType, JointType>(JointType.WristLeft, JointType.HandTipLeft),
+            new Bone(JointType.WristLeft, JointType.HandTipLeft),
 
             // Right Leg
-            new Tuple<JointType, JointType>(JointType.HipRight, JointType.KneeRight),
-            new Tuple<JointType, JointType>(JointType.KneeRight, JointType.AnkleRight),
-            new Tuple<JointType, JointType>(JointType.AnkleRight, JointType.FootRight),
+            new Bone(JointType.HipRight, JointType.KneeRight),
+            new Bone(JointType.KneeRight, JointType.AnkleRight),
+            new Bone(JointType.AnkleRight, JointType.FootRight),
 
             // Left Leg
-            new Tuple<JointType, JointType>(JointType.HipLeft, JointType.KneeLeft),
-            new Tuple<JointType, JointType>(JointType.KneeLeft, JointType.AnkleLeft),
-            new Tuple<JointType, JointType>(JointType.AnkleLeft, JointType.FootLeft)
+            new Bone(JointType.HipLeft, JointType.KneeLeft),
+            new Bone(JointType.KneeLeft, JointType.AnkleLeft),
+            new Bone(JointType.AnkleLeft, JointType.FootLeft)
         };
 
         readonly List<Pen> _bodyColors = new List<Pen>()
@@ -172,7 +171,7 @@ namespace FogControlWithKinect.Services
             // Draw the bones
             foreach (var bone in _bones)
             {
-                DrawBone(joints, jointPoints, bone.Item1, bone.Item2, drawingContext, drawingPen);
+                DrawBone(joints, jointPoints, bone.StartJoint, bone.EndJoint, drawingContext, drawingPen);
             }
 
             // Draw the joints

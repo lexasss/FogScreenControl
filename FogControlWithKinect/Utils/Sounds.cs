@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Media;
 
-namespace FogControlWithKinect.Utils
+namespace FogScreenControl.Utils
 {
     internal class Sounds
     {

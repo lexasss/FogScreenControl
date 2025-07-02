@@ -1,17 +1,15 @@
 ﻿using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Fog Control with Kinect")]
-[assembly: AssemblyDescription("Kinect-based mouse control on a PC display projected to a fog screen")]
+[assembly: AssemblyTitle("Fog Screen Control with a Hand Tracker")]
+[assembly: AssemblyDescription("Fog screen control with a mouse cursor that is driven by a hand tracker")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tampere University")]
-[assembly: AssemblyProduct("FogControlWithKinect")]
+[assembly: AssemblyProduct("FogScreenControl")]
 [assembly: AssemblyCopyright("Oleg Spakov © 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

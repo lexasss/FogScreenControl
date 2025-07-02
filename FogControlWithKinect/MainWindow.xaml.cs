@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 
-namespace FogControlWithKinect
+namespace FogScreenControl
 {
 
     public partial class MainWindow : Window, INotifyPropertyChanged
@@ -52,7 +52,7 @@ namespace FogControlWithKinect
             }
         }
 
-        public string StatusText => _isReady ? "Kinect is connected." : "Kinect is not available.";
+        public string StatusText => _isReady ? $"{TrackerType} is connected." : $"{TrackerType} is not available.";
 
         public bool IsRunning
         {
@@ -78,6 +78,63 @@ namespace FogControlWithKinect
             }
         }
 
+        public Enums.TrackerType TrackerType
+        {
+            get => (Enums.TrackerType)Properties.Settings.Default.TrackerType;
+            set
+            {
+                Properties.Settings.Default.MappingMethod = (int)value;
+                Properties.Settings.Default.Save();
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MappingMethod)));
+            }
+        }
+
+
+        public ICommand ConnectCommand => new DelegateCommand(() =>
+        {
+            try
+            {
+                _handTipService = new Services.HandTipService(TrackerType);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Failed to initialize the '{TrackerType}' hand tracker: {ex.Message}", Title, MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            pagConnect.Visibility = Visibility.Collapsed;
+
+            if (_handTipService.IsAvailable)
+            {
+                IsReady = true;
+            }
+
+            _handTipService.IsAvailableChanged += (s, args) => Dispatcher.Invoke(() =>
+            {
+                IsReady = args.IsAvailable;
+            });
+
+            _handTipService.TipLocationChanged += (s, args) => Dispatcher.Invoke(() =>
+            {
+                if (_isCalibrating)
+                    return;
+
+                _mouseController?.SetPosition(args.Location);
+            });
+
+            _handTipService.FrameArrived += (s, args) => Dispatcher.Invoke(() =>
+            {
+                if (_isCalibrating)
+                    return;
+
+                _skeletonPainter?.Draw(args.Bodies, (pt) => _handTipService.SpaceToPlane(pt));
+            });
+
+            var frameDescription = _handTipService.FrameDescription;
+            _skeletonPainter = new Services.SkeletonPainter(frameDescription.Width, frameDescription.Height, _hand);
+
+            imgSkeleton.Source = _skeletonPainter.ImageSource;
+        });
 
         public ICommand ToggleInteractionCommand => new DelegateCommand(() =>
         {
@@ -141,41 +198,6 @@ namespace FogControlWithKinect
         bool _isReady = false;
         bool _isRunning = false;
         bool _isCalibrating = false;
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            _handTipService = new Services.HandTipService();
-            if (_handTipService.IsAvailable)
-            {
-                IsReady = true;
-            }
-
-            _handTipService.IsAvailableChanged += (s, args) => Dispatcher.Invoke(() =>
-            {
-                IsReady = args.IsAvailable;
-            });
-
-            _handTipService.TipLocationChanged += (s, args) => Dispatcher.Invoke(() =>
-            {
-                if (_isCalibrating)
-                    return;
-
-                _mouseController?.SetPosition(args.Location);
-            });
-
-            _handTipService.FrameArrived += (s, args) => Dispatcher.Invoke(() =>
-            {
-                if (_isCalibrating)
-                    return;
-
-                _skeletonPainter?.Draw(args.Bodies, (pt) => _handTipService.SpaceToPlane(pt));
-            });
-
-            var frameDescription = _handTipService.FrameDescription;
-            _skeletonPainter = new Services.SkeletonPainter(frameDescription.Width, frameDescription.Height, _hand);
-
-            imgSkeleton.Source = _skeletonPainter.ImageSource;
-        }
 
         private void Window_Closed(object sender, System.EventArgs e)
         {

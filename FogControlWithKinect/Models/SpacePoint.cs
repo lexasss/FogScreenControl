@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FogControlWithKinect.Models
+namespace FogScreenControl.Models
 {
     /// <summary>
     /// Represents a 3D point in meters.
@@ -12,15 +12,15 @@ namespace FogControlWithKinect.Models
         /// <summary>
         /// Meters
         /// </summary>
-        public double X { get; }
+        public double X { get; set; }
         /// <summary>
         /// Meters
         /// </summary>
-        public double Y { get; }
+        public double Y { get; set; }
         /// <summary>
         /// Meters
         /// </summary>
-        public double Z { get; }
+        public double Z { get; set; }
 
         public SpacePoint()
         {

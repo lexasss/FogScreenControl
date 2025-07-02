@@ -1,10 +1,10 @@
-﻿using FogControlWithKinect.Enums;
-using FogControlWithKinect.Models;
+﻿using FogScreenControl.Enums;
+using FogScreenControl.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace FogControlWithKinect.Services
+namespace FogScreenControl.Services
 {
     public class MappingService
     {

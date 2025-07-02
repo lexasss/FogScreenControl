@@ -1,7 +1,7 @@
-﻿using FogControlWithKinect.Models;
+﻿using FogScreenControl.Models;
 using System;
 
-namespace FogControlWithKinect.Services.Mappers
+namespace FogScreenControl.Services.Mappers
 {
     internal class Naive : IMapper
     {

@@ -1,6 +1,6 @@
-﻿using FogControlWithKinect.Models;
+﻿using FogScreenControl.Models;
 
-namespace FogControlWithKinect.Services.Mappers
+namespace FogScreenControl.Services.Mappers
 {
     internal interface IMapper
     {

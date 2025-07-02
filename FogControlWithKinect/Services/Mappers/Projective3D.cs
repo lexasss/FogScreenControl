@@ -1,8 +1,8 @@
-﻿using FogControlWithKinect.Models;
+﻿using FogScreenControl.Models;
 using MathNet.Numerics.LinearAlgebra;
 using System;
 
-namespace FogControlWithKinect.Services.Mappers
+namespace FogScreenControl.Services.Mappers
 {
     internal class Projective3D : IMapper
     {

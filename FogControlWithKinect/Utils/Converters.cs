@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace FogControlWithKinect.Utils
+namespace FogScreenControl.Utils
 {
     [ValueConversion(typeof(Enums.CalibrationPoint), typeof(Visibility))]
     public class CalibrationPointToVisibilityConverter : IValueConverter

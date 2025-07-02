@@ -1,12 +1,12 @@
-﻿using FogControlWithKinect.Enums;
-using FogControlWithKinect.Models;
+﻿using FogScreenControl.Enums;
+using FogScreenControl.Models;
 using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace FogControlWithKinect.Services
+namespace FogScreenControl.Services
 {
     public class CalibrationService
     {

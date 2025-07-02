@@ -1,6 +1,6 @@
 ﻿using DevExpress.Mvvm;
-using FogControlWithKinect.Enums;
-using FogControlWithKinect.Services;
+using FogScreenControl.Enums;
+using FogScreenControl.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
-namespace FogControlWithKinect
+namespace FogScreenControl
 {
     public partial class CalibrationWindow : Window, INotifyPropertyChanged
     {
@@ -134,7 +134,7 @@ namespace FogControlWithKinect
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DistanceToScreen)));
         }
 
-        private void HandTipService_FrameArrived(object sender, HandTipService.FrameArrivedEventArgs e)
+        private void HandTipService_FrameArrived(object sender, Tracker.FrameArrivedEventArgs e)
         {
             Dispatcher.Invoke(() =>
             {
@@ -174,7 +174,7 @@ namespace FogControlWithKinect
             return result == MessageBoxResult.Yes;
         }
 
-        private void HandTipService_TipLocationChanged(object sender, HandTipService.TipLocationChangedEventArgs e)
+        private void HandTipService_TipLocationChanged(object sender, Tracker.TipLocationChangedEventArgs e)
         {
             if (_calibrationService == null)
                 return;

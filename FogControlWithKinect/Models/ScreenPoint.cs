@@ -1,4 +1,4 @@
-﻿namespace FogControlWithKinect.Models
+﻿namespace FogScreenControl.Models
 {
     /// <summary>
     /// Represents screen coordinates in pixels.

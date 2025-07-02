@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FogControlWithKinect.Services
+namespace FogScreenControl.Services
 {
     public class LowPassFilter
     {

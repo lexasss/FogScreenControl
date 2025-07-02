@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace FogControlWithKinect.Properties {
+namespace FogScreenControl.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -68,6 +68,18 @@ namespace FogControlWithKinect.Properties {
             }
             set {
                 this["MappingMethod"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int TrackerType {
+            get {
+                return ((int)(this["TrackerType"]));
+            }
+            set {
+                this["TrackerType"] = value;
             }
         }
     }
