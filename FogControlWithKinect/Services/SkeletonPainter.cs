@@ -51,12 +51,8 @@ namespace FogControlWithKinect.Services
                 int penIndex = 0;
                 foreach (Body body in bodies)
                 {
-                    Pen drawPen = _bodyColors[penIndex++];
-
                     if (!body.IsTracked)
                         continue;
-
-                    DrawClippedEdges(body, dc);
 
                     // Joint points on the screen
                     var screenJointPoints = new Dictionary<JointType, ScreenPoint>();
@@ -75,10 +71,11 @@ namespace FogControlWithKinect.Services
                         screenJointPoints[joint.Key] = new ScreenPoint(depthSpacePoint.X, depthSpacePoint.Y);
                     }
 
+                    Pen drawPen = _bodyColors[penIndex++];
                     DrawBody(body.Joints, screenJointPoints, dc, drawPen);
 
                     var handTipJointType = HandTipService.HandToJointType(Hand);
-                    var spacePoint = SpacePoint.From(body.Joints[handTipJointType].Position);
+                    var spacePoint = new SpacePoint().From(body.Joints[handTipJointType].Position);
 
                     DrawHand(screenJointPoints[handTipJointType], spacePoint, dc);
                 }
@@ -257,48 +254,6 @@ namespace FogControlWithKinect.Services
             var from = new System.Windows.Point(jointPoints[jointType0].X, jointPoints[jointType0].Y);
             var to = new System.Windows.Point(jointPoints[jointType1].X, jointPoints[jointType1].Y);
             drawingContext.DrawLine(drawPen, from, to);
-        }
-
-        /// <summary>
-        /// Draws indicators to show which edges are clipping body data
-        /// </summary>
-        /// <param name="body">body to draw clipping information for</param>
-        /// <param name="drawingContext">drawing context to draw to</param>
-        private void DrawClippedEdges(Body body, DrawingContext drawingContext)
-        {
-            FrameEdges clippedEdges = body.ClippedEdges;
-
-            if (clippedEdges.HasFlag(FrameEdges.Bottom))
-            {
-                drawingContext.DrawRectangle(
-                    Brushes.Red,
-                    null,
-                    new System.Windows.Rect(0, _displayHeight - ClipBoundsThickness, _displayWidth, ClipBoundsThickness));
-            }
-
-            if (clippedEdges.HasFlag(FrameEdges.Top))
-            {
-                drawingContext.DrawRectangle(
-                    Brushes.Red,
-                    null,
-                    new System.Windows.Rect(0, 0, _displayWidth, ClipBoundsThickness));
-            }
-
-            if (clippedEdges.HasFlag(FrameEdges.Left))
-            {
-                drawingContext.DrawRectangle(
-                    Brushes.Red,
-                    null,
-                    new System.Windows.Rect(0, 0, ClipBoundsThickness, _displayHeight));
-            }
-
-            if (clippedEdges.HasFlag(FrameEdges.Right))
-            {
-                drawingContext.DrawRectangle(
-                    Brushes.Red,
-                    null,
-                    new System.Windows.Rect(_displayWidth - ClipBoundsThickness, 0, ClipBoundsThickness, _displayHeight));
-            }
         }
     }
 }

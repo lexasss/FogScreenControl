@@ -6,27 +6,34 @@ namespace FogControlWithKinect.Services.Mappers
 {
     internal class Projective2D : IMapper
     {
+        public Enums.MappingMethod Method => Enums.MappingMethod.Linear2D;
+
         public void Configure(ScreenPoint[] screenPoints, SpacePoint[] spacePoints)
         {
-            if (spacePoints.Length != 4 || screenPoints.Length != 4)
-                throw new ArgumentException("Exactly 4 point pairs are required.");
+            if (spacePoints.Length < 4 || spacePoints.Length != screenPoints.Length)
+                throw new ArgumentException("At least 4 point correspondences are required.");
 
-            var A = Matrix<double>.Build.Dense(8, 6);
-            var b = Vector<double>.Build.Dense(8);
+            int n = spacePoints.Length;
 
-            for (int i = 0; i < 4; i++)
+            // Build matrix A (2n x 8) and vector b (2n x 1)
+            var A = Matrix<double>.Build.Dense(2 * n, 6);
+            var b = Vector<double>.Build.Dense(2 * n);
+
+            for (int i = 0; i < n; i++)
             {
                 double x = spacePoints[i].X, y = spacePoints[i].Y;
                 double u = screenPoints[i].X, v = screenPoints[i].Y;
 
+                // Row 2i → x equation
                 A.SetRow(2 * i, new[] { x, y, 1, 0, 0, 0 });
-                A.SetRow(2 * i + 1, new[] { 0, 0, 0, x, y, 1 });
-
                 b[2 * i] = u;
+
+                // Row 2i+1 → y equation
+                A.SetRow(2 * i + 1, new[] { 0, 0, 0, x, y, 1 });
                 b[2 * i + 1] = v;
             }
 
-            // Solve the least squares problem A * h = b
+            // Solve A * p = b using least squares
             Vector<double> h = A.Solve(b);
 
             // Reshape h into a 2x3 matrix
@@ -41,9 +48,10 @@ namespace FogControlWithKinect.Services.Mappers
             if (_projectionMatrix == null)
                 throw new InvalidOperationException("Mapper is not configured. Call Configure() first.");
 
-            double x = _projectionMatrix[0, 0] * spacePoint.X + _projectionMatrix[0, 1] * spacePoint.Y + _projectionMatrix[0, 2];
-            double y = _projectionMatrix[1, 0] * spacePoint.X + _projectionMatrix[1, 1] * spacePoint.Y + _projectionMatrix[1, 2];
-            return new ScreenPoint(x, y);
+            var vec = Vector<double>.Build.DenseOfArray(new[] { spacePoint.X, spacePoint.Y, 1.0 });
+            var result = _projectionMatrix * vec;
+
+            return new ScreenPoint(result[0], result[1]);
         }
 
         public double GetDistanceFromScreen(SpacePoint spacePoint, double distanceToScreen) =>

@@ -6,10 +6,12 @@ namespace FogControlWithKinect.Services.Mappers
 {
     internal class Projective3D : IMapper
     {
+        public Enums.MappingMethod Method => Enums.MappingMethod.Linear3D;
+
         public void Configure(ScreenPoint[] screenPoints, SpacePoint[] spacePoints)
         {
-            if (spacePoints.Length != 4 || screenPoints.Length != 4)
-                throw new ArgumentException("Exactly 4 point correspondences are required.");
+            if (spacePoints.Length < 4 || spacePoints.Length != screenPoints.Length)
+                throw new ArgumentException("At least 4 point correspondences are required.");
 
             int n = spacePoints.Length;
 
@@ -19,25 +21,25 @@ namespace FogControlWithKinect.Services.Mappers
 
             for (int i = 0; i < n; i++)
             {
-                double X = spacePoints[i].X, Y = spacePoints[i].Y, Z = spacePoints[i].Z;
-                double x = screenPoints[i].X, y = screenPoints[i].Y;
+                double x = spacePoints[i].X, y = spacePoints[i].Y, z = spacePoints[i].Z;
+                double u = screenPoints[i].X, v = screenPoints[i].Y;
 
                 // Row 2i → x equation
-                A.SetRow(2 * i, new[] { X, Y, Z, 1, 0, 0, 0, 0 });
-                b[2 * i] = x;
+                A.SetRow(2 * i, new[] { x, y, z, 1, 0, 0, 0, 0 });
+                b[2 * i] = u;
 
                 // Row 2i+1 → y equation
-                A.SetRow(2 * i + 1, new[] { 0, 0, 0, 0, X, Y, Z, 1 });
-                b[2 * i + 1] = y;
+                A.SetRow(2 * i + 1, new[] { 0, 0, 0, 0, x, y, z, 1 });
+                b[2 * i + 1] = v;
             }
 
             // Solve A * p = b using least squares
-            Vector<double> p = A.Solve(b); // 8 parameters
+            Vector<double> h = A.Solve(b); // 8 parameters
 
-            // Reshape to 2x4 matrix
+            // Reshape h into a 2x4 matrix
             _projectionMatrix = Matrix<double>.Build.DenseOfRowArrays(
-                new[] { p[0], p[1], p[2], p[3] },
-                new[] { p[4], p[5], p[6], p[7] }
+                new[] { h[0], h[1], h[2], h[3] },
+                new[] { h[4], h[5], h[6], h[7] }
             );
         }
 
@@ -48,6 +50,7 @@ namespace FogControlWithKinect.Services.Mappers
 
             var vec = Vector<double>.Build.DenseOfArray(new[] { spacePoint.X, spacePoint.Y, spacePoint.Z, 1.0 });
             var result = _projectionMatrix * vec;
+
             return new ScreenPoint(result[0], result[1]);
         }
 

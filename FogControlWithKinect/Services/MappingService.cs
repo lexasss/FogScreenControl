@@ -1,4 +1,5 @@
-﻿using FogControlWithKinect.Models;
+﻿using FogControlWithKinect.Enums;
+using FogControlWithKinect.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,16 +11,25 @@ namespace FogControlWithKinect.Services
         public bool IsReady { get; private set; } = false;
 
         /// <summary>
-        /// Distance between the tracking camera and the screen in meters.
+        /// Distance between the tracking camera and the fog screen in meters.
         /// </summary>
         public double DistanceToScreen { get; set; } = 2.15;
 
-        private MappingService()
+        public MappingMethod Method => _mapper.Method;
+
+        private MappingService(MappingMethod method)
         {
-            _mapper = new Mappers.Projective2D();
+            if (method == MappingMethod.Naive)
+                _mapper = new Mappers.Naive();
+            else if (method == MappingMethod.Linear2D)
+                _mapper = new Mappers.Projective2D();
+            else if (method == MappingMethod.Linear3D)
+                _mapper = new Mappers.Projective3D();
+            else
+                throw new ArgumentException("Invalid mapping method specified.", nameof(method));
         }
 
-        public MappingService(string calibFileName) : this()
+        public MappingService(MappingMethod method, string calibFileName) : this(method)
         {
             try
             {
@@ -32,11 +42,11 @@ namespace FogControlWithKinect.Services
             }
         }
 
-        public MappingService(SpacePoint[] spacePoints, double distanceToScreen) : this()
+        public MappingService(MappingMethod method, SpacePoint[] spacePoints, double distanceToScreen) : this(method)
         {
             DistanceToScreen = distanceToScreen;
 
-            var screenPoints = ConstructScreenPoints();
+            var screenPoints = CalibrationService.GetScreenPoints(spacePoints.Length);
             _mapper.Configure(screenPoints, spacePoints);
 
             IsReady = true;
@@ -56,7 +66,6 @@ namespace FogControlWithKinect.Services
 
         public double GetDistanceFromScreen(SpacePoint point) => _mapper.GetDistanceFromScreen(point, DistanceToScreen);
 
-        public ScreenPoint[] GetScreenPoints() => ConstructScreenPoints();
 
         // Internal
 
@@ -81,7 +90,7 @@ namespace FogControlWithKinect.Services
                     {
                         screenPoints.Add(new ScreenPoint(double.Parse(p[0]), double.Parse(p[1])));
                     }
-                    else if (line.Length > 0 && double.TryParse(line, out double distanceToScreen))
+                    else if (line.Length > 0 && double.TryParse(line, out double distanceToScreen)) // distance to screen
                     {
                         DistanceToScreen = distanceToScreen;
                     }
@@ -96,25 +105,12 @@ namespace FogControlWithKinect.Services
             var screenPointArray = screenPoints.ToArray();
             if (screenPointArray.Length < 4)
             {
-                screenPointArray = ConstructScreenPoints();
+                screenPointArray = CalibrationService.GetScreenPoints(screenPoints.Count);
             }
 
             _mapper.Configure(screenPointArray, spacePoints.ToArray());
 
             IsReady = true;
-        }
-
-        private ScreenPoint[] ConstructScreenPoints()
-        {
-            var screenWidth = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CXSCREEN);
-            var screenHeight = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CYSCREEN);
-
-            return new ScreenPoint[] {
-                new ScreenPoint(0, 0),
-                new ScreenPoint(screenWidth, 0),
-                new ScreenPoint(0, screenHeight),
-                new ScreenPoint(screenWidth, screenHeight)
-            };
         }
     }
 }

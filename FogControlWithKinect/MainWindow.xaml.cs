@@ -67,13 +67,25 @@ namespace FogControlWithKinect
 
         public string ToggleInteractionButtonText => _isRunning ? "Stop interaction" : "Start interaction";
 
+        public Enums.MappingMethod MappingMethod
+        {
+            get => (Enums.MappingMethod)Properties.Settings.Default.MappingMethod;
+            set
+            {
+                Properties.Settings.Default.MappingMethod = (int)value;
+                Properties.Settings.Default.Save();
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MappingMethod)));
+            }
+        }
+
+
         public ICommand ToggleInteractionCommand => new DelegateCommand(() =>
         {
             IsRunning = !IsRunning;
 
             if (IsRunning)
             {
-                var mapper = new Services.MappingService(App.CalibrationFileName);
+                var mapper = new Services.MappingService(MappingMethod, App.CalibrationFileName);
                 if (!mapper.IsReady)
                 {
                     MessageBox.Show("Sensor-to-fogscreen mapping is not available. Please calibrate the sensor.",
@@ -104,7 +116,7 @@ namespace FogControlWithKinect
 
         public ICommand CalibrateCommand => new DelegateCommand(() =>
         {
-            var calibrationWindow = new CalibrationWindow(_handTipService, _hand);
+            var calibrationWindow = new CalibrationWindow(_handTipService, _hand, MappingMethod);
 
             _isCalibrating = true;
             calibrationWindow.ShowDialog();

@@ -1,8 +1,10 @@
-﻿using FogControlWithKinect.Models;
+﻿using FogControlWithKinect.Enums;
+using FogControlWithKinect.Models;
 using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace FogControlWithKinect.Services
 {
@@ -20,6 +22,10 @@ namespace FogControlWithKinect.Services
         };
 
         public SpacePoint[] SpacePoints => _spacePoints.ToArray();
+
+        public static int[] CalibPointCounts => _calibrationPointsList.Keys.ToArray();
+        public static CalibrationPoint[] GetCalibPoints(int count) => _calibrationPointsList[count].Select(p => p.Item1).ToArray();
+        public static ScreenPoint[] GetScreenPoints(int count) => _calibrationPointsList[count].Select(p => p.Item2).ToArray();
 
 
         public CalibrationService(MappingService mapper, int pointCount)
@@ -39,7 +45,7 @@ namespace FogControlWithKinect.Services
 
                 writer.WriteLine(_mapper.DistanceToScreen);
 
-                ScreenPoint[] screenPoints = _mapper.GetScreenPoints();
+                ScreenPoint[] screenPoints = GetScreenPoints(_spacePoints.Count);
                 foreach (var screenPoint in screenPoints)
                 {
                     writer.WriteLine($"{screenPoint.X} {screenPoint.Y}");
@@ -122,6 +128,7 @@ namespace FogControlWithKinect.Services
             return result;
         }
 
+
         // Internal
 
         [Flags]
@@ -147,5 +154,29 @@ namespace FogControlWithKinect.Services
         int _calibPointIndex = -1;
         int _sampleIndex = 0;
         State _state = State.Initialized;
+
+        static Dictionary<int, (CalibrationPoint, ScreenPoint)[]> _calibrationPointsList = new Dictionary<int, (CalibrationPoint, ScreenPoint)[]>();
+
+        static CalibrationService()
+        {
+            var screenWidth = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CXSCREEN);
+            var screenHeight = Utils.WinAPI.GetSystemMetrics(Utils.WinAPI.SystemMetric.SM_CYSCREEN);
+
+            // Initialize the static calibration points list
+
+            var topLeft = (CalibrationPoint.TopLeft, new ScreenPoint(0, 0));
+            var topRight = (CalibrationPoint.TopRight, new ScreenPoint(screenWidth, 0));
+            var bottomLeft = (CalibrationPoint.BottomLeft, new ScreenPoint(0, screenHeight));
+            var bottomRight = (CalibrationPoint.BottomRight, new ScreenPoint(screenWidth, screenHeight));
+            var center = (CalibrationPoint.Center, new ScreenPoint(screenWidth / 2, screenHeight / 2));
+            var topCenter = (CalibrationPoint.Top, new ScreenPoint(screenWidth / 2, 0));
+            var bottomCenter = (CalibrationPoint.Bottom, new ScreenPoint(screenWidth / 2, screenHeight));
+            var leftCenter = (CalibrationPoint.Left, new ScreenPoint(0, screenHeight / 2));
+            var rightCenter = (CalibrationPoint.Right, new ScreenPoint(screenWidth, screenHeight / 2));
+
+            _calibrationPointsList.Add(4, new[] { topLeft, topRight, bottomLeft, bottomRight });
+            _calibrationPointsList.Add(5, new[] { topLeft, topRight, bottomLeft, bottomRight, center });
+            _calibrationPointsList.Add(9, new[] { topLeft, topRight, bottomLeft, bottomRight, center, topCenter, leftCenter, rightCenter, bottomCenter });
+        }
     }
 }

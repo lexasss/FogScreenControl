@@ -58,5 +58,17 @@ namespace FogControlWithKinect.Properties {
                 this["CalibrationPointCount"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int MappingMethod {
+            get {
+                return ((int)(this["MappingMethod"]));
+            }
+            set {
+                this["MappingMethod"] = value;
+            }
+        }
     }
 }

@@ -36,9 +36,6 @@ namespace FogControlWithKinect.Models
             Z = z;
         }
 
-        public static SpacePoint From(Microsoft.Kinect.CameraSpacePoint kinectPoint) =>
-            new SpacePoint(kinectPoint.X, kinectPoint.Y, kinectPoint.Z);
-
         public double DistanceToXY(SpacePoint other)
         {
             double x = other.X;

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-        xmlns:services="clr-namespace:FogControlWithKinect.Services"
+        xmlns:enums="clr-namespace:FogControlWithKinect.Enums"
         xmlns:utils="clr-namespace:FogControlWithKinect.Utils"
         mc:Ignorable="d"
         md:ThemeAssist.Theme="Dark"
@@ -35,13 +35,17 @@
             <Setter Property="Background" Value="#8044BBFF"/>
             <Setter Property="Width" Value="120"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
         </Style>
     </Window.Resources>
     
     <Grid>
+        <Viewbox HorizontalAlignment="Center">
+            <Image x:Name="imgSkeleton" Stretch="UniformToFill"/>
+        </Viewbox>
+
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.TopLeft}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.TopLeft}}"
                  HorizontalAlignment="Left"
                  VerticalAlignment="Top">
             <Ellipse.RenderTransform>
@@ -51,7 +55,7 @@
             </Ellipse.RenderTransform>
         </Ellipse>
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.Top}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.Top}}"
                  HorizontalAlignment="Center"
                  VerticalAlignment="Top">
             <Ellipse.RenderTransform>
@@ -61,7 +65,7 @@
             </Ellipse.RenderTransform>
         </Ellipse>
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.TopRight}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.TopRight}}"
                  HorizontalAlignment="Right"
                  VerticalAlignment="Top">
             <Ellipse.RenderTransform>
@@ -71,7 +75,7 @@
             </Ellipse.RenderTransform>
         </Ellipse>
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.Left}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.Left}}"
                  HorizontalAlignment="Left"
                  VerticalAlignment="Center">
             <Ellipse.RenderTransform>
@@ -81,12 +85,12 @@
             </Ellipse.RenderTransform>
         </Ellipse>
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.Center}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.Center}}"
                  HorizontalAlignment="Center"
                  VerticalAlignment="Center">
         </Ellipse>
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.Right}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.Right}}"
                  HorizontalAlignment="Right"
                  VerticalAlignment="Center">
             <Ellipse.RenderTransform>
@@ -96,7 +100,7 @@
             </Ellipse.RenderTransform>
         </Ellipse>
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.BottomLeft}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.BottomLeft}}"
                  HorizontalAlignment="Left"
                  VerticalAlignment="Bottom">
             <Ellipse.RenderTransform>
@@ -106,7 +110,7 @@
             </Ellipse.RenderTransform>
         </Ellipse>
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.Bottom}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.Bottom}}"
                  HorizontalAlignment="Center"
                  VerticalAlignment="Bottom">
             <Ellipse.RenderTransform>
@@ -116,7 +120,7 @@
             </Ellipse.RenderTransform>
         </Ellipse>
         <Ellipse Style="{StaticResource Target}"
-                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static services:CalibrationPoint.BottomRight}}"
+                 Visibility="{Binding CalibrationPoint, Converter={StaticResource CalibPoint2Visibility}, ConverterParameter={x:Static enums:CalibrationPoint.BottomRight}}"
                  HorizontalAlignment="Right"
                  VerticalAlignment="Bottom">
             <Ellipse.RenderTransform>
@@ -126,37 +130,32 @@
             </Ellipse.RenderTransform>
         </Ellipse>
 
-        <Viewbox Margin="64"
-                 HorizontalAlignment="Center">
-            <Image x:Name="imgSkeleton" Stretch="UniformToFill"/>
-        </Viewbox>
-
         <StackPanel Style="{StaticResource Control}"
                     Visibility="{Binding IsCalibrating, Converter={StaticResource Bool2InvVisivility}}">
-            <UniformGrid>
-                <Label Content="Points"
-                       Foreground="White"
-                       HorizontalAlignment="Center"/>
+            <UniformGrid Margin="8">
+                <Label Content="Points" VerticalContentAlignment="Center"/>
                 <ComboBox ItemsSource="{Binding CalibrationPointCounts}"
                           SelectedItem="{Binding CalibrationPointCount}"
+                          FontSize="16"
+                          HorizontalContentAlignment="Center"
+                          Foreground="White"
                           Width="46"/>
-                <Label Content="Distance"
-                       Foreground="White"
-                       HorizontalAlignment="Center"/>
+
+                <Label Content="Distance" VerticalContentAlignment="Center"/>
                 <TextBox Text="{Binding DistanceToScreen, Mode=TwoWay}"
-                         HorizontalAlignment="Center"
                          HorizontalContentAlignment="Center"
-                         Foreground="White"
                          FontSize="16"
                          Width="46"
-                         CaretBrush="AliceBlue"
+                         Foreground="White"
+                         CaretBrush="White"
                          IsEnabled="{Binding IsCalibrating, Converter={StaticResource Inverted}}"/>
             </UniformGrid>
         </StackPanel>
 
         <WrapPanel x:Name="stpButtonContainer"
-                    HorizontalAlignment="Center"
-                   VerticalAlignment="Bottom">
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Bottom"
+                   Margin="24">
             <Button Content="{Binding CalibrationButtonText, Mode=OneWay}"
                     Command="{Binding ToggleCalibrationCommand}"
                     Margin="8"

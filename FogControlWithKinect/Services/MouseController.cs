@@ -44,51 +44,42 @@ namespace FogControlWithKinect.Services
 
         private void EnterFog(int x, int y)
         {
-            if (_method == InterationMethod.ClickAndDrag)
-            {
-                Utils.WinAPI.SetCursorPos(x, y);
+            Utils.WinAPI.SetCursorPos(x, y);
 
-                _x = x;
-                _y = y;
+            _x = x;
+            _y = y;
 
-                if (!_isInteracting)
-                {
-                    _isInteracting = true;
-
-                    Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTDOWN, _x, _y, 0, 0);
-
-                    if (IsPlayingSoundOnMouseEvents)
-                    {
-                        Utils.Sounds.In.Play();
-                    }
-                }
-            }
-            else if (_method == InterationMethod.Move)
+            if (!_isInteracting)
             {
                 _isInteracting = true;
-                Utils.WinAPI.SetCursorPos(x, y);
+
+                if (_method == InterationMethod.ClickAndDrag)
+                {
+                    Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTDOWN, _x, _y, 0, 0);
+                }
+
+                if (IsPlayingSoundOnMouseEvents)
+                {
+                    Utils.Sounds.In.Play();
+                }
             }
         }
 
         private void LeaveFog(double handTipOffsetFromScreen) // in front of fog
         {
-            if (_method == InterationMethod.ClickAndDrag)
-            {
-                if (_isInteracting && handTipOffsetFromScreen < ANTIFLICKERING_THRESHOLD)
-                {
-                    _isInteracting = false;
-
-                    Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTUP, _x, _y, 0, 0);
-
-                    if (IsPlayingSoundOnMouseEvents)
-                    {
-                        Utils.Sounds.Out.Play();
-                    }
-                }
-            }
-            else if (_method == InterationMethod.Move)
+            if (_isInteracting && handTipOffsetFromScreen < ANTIFLICKERING_THRESHOLD)
             {
                 _isInteracting = false;
+
+                if (_method == InterationMethod.ClickAndDrag)
+                {
+                    Utils.WinAPI.mouse_event(Utils.WinAPI.MouseEventFlags.LEFTUP, _x, _y, 0, 0);
+                }
+
+                if (IsPlayingSoundOnMouseEvents)
+                {
+                    Utils.Sounds.Out.Play();
+                }
             }
         }
     }

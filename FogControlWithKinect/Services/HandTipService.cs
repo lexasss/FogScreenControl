@@ -7,6 +7,12 @@ using System.Windows;
 
 namespace FogControlWithKinect.Services
 {
+    public static class SpacePointExtensions
+    {
+        public static SpacePoint From(this SpacePoint point, CameraSpacePoint cameraSpacePoint) =>
+            new SpacePoint(cameraSpacePoint.X, cameraSpacePoint.Y, cameraSpacePoint.Z);
+    }
+
     public class HandTipService : IDisposable
     {
         public class TipLocationChangedEventArgs : EventArgs
@@ -140,7 +146,7 @@ namespace FogControlWithKinect.Services
                         System.Diagnostics.Debug.WriteLine($"Raw Z = {position.Z:F4}, Mapped XY = ({depthSpacePoint.X:F4}, {depthSpacePoint.Y:F4})");
                         */
 
-                        TipLocationChanged?.Invoke(this, new TipLocationChangedEventArgs(SpacePoint.From(position)));
+                        TipLocationChanged?.Invoke(this, new TipLocationChangedEventArgs(new SpacePoint().From(position)));
                     }
                 }
 

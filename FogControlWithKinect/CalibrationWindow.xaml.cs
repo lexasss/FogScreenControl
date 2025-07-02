@@ -12,7 +12,7 @@ namespace FogControlWithKinect
 {
     public partial class CalibrationWindow : Window, INotifyPropertyChanged
     {
-        public IEnumerable<int> CalibrationPointCounts => _calibrationPointsLists.Keys;
+        public IEnumerable<int> CalibrationPointCounts => CalibrationService.CalibPointCounts;
 
         public int CalibrationPointCount
         {
@@ -22,7 +22,7 @@ namespace FogControlWithKinect
                 Properties.Settings.Default.CalibrationPointCount = value;
                 Properties.Settings.Default.Save();
 
-                _calibrationPoints = _calibrationPointsLists[value];
+                _calibrationPoints = CalibrationService.GetCalibPoints(value);
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CalibrationPointCount)));
             }
         }
@@ -103,16 +103,20 @@ namespace FogControlWithKinect
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public CalibrationWindow(HandTipService handTipService, Hand hand)
+        public CalibrationWindow(HandTipService handTipService, Hand hand, MappingMethod mappingMethod)
         {
             InitializeComponent();
 
-            if (!_calibrationPointsLists.Keys.Contains(CalibrationPointCount))
+            if (!CalibrationService.CalibPointCounts.Contains(CalibrationPointCount))
             {
-                CalibrationPointCount = _calibrationPointsLists.First().Key;
+                CalibrationPointCount = CalibrationService.CalibPointCounts[0];
+            }
+            else
+            {
+                _calibrationPoints = CalibrationService.GetCalibPoints(CalibrationPointCount);
             }
 
-            _mappingService = new MappingService(App.CalibrationFileName);
+            _mappingService = new MappingService(mappingMethod, App.CalibrationFileName);
             _handTipService = handTipService;
             _hand = hand;
 
@@ -140,39 +144,6 @@ namespace FogControlWithKinect
 
         // Internal
 
-        readonly Dictionary<int, CalibrationPoint[]> _calibrationPointsLists = new Dictionary<int, CalibrationPoint[]>() {
-            { 4,  new []
-                {
-                    CalibrationPoint.TopLeft,
-                    CalibrationPoint.TopRight,
-                    CalibrationPoint.BottomLeft,
-                    CalibrationPoint.BottomRight,
-                }
-            },
-            { 5, new[]
-                {
-                    CalibrationPoint.TopLeft,
-                    CalibrationPoint.TopRight,
-                    CalibrationPoint.BottomLeft,
-                    CalibrationPoint.BottomRight,
-                    CalibrationPoint.Center,
-                }
-            },
-            { 9, new[]
-                {
-                    CalibrationPoint.TopLeft,
-                    CalibrationPoint.Top,
-                    CalibrationPoint.TopRight,
-                    CalibrationPoint.Left,
-                    CalibrationPoint.Center,
-                    CalibrationPoint.Right,
-                    CalibrationPoint.BottomLeft,
-                    CalibrationPoint.Bottom,
-                    CalibrationPoint.BottomRight,
-                }
-            }
-        };
-
         readonly MappingService _mappingService;
         readonly HandTipService _handTipService;
         readonly SkeletonPainter _skeletonPainter;
@@ -192,7 +163,7 @@ namespace FogControlWithKinect
         {
             _mouseController = new MouseController(
                 InterationMethod.Move,
-                new MappingService(_calibrationService.SpacePoints, _mappingService.DistanceToScreen));
+                new MappingService(_mappingService.Method, _calibrationService.SpacePoints, _mappingService.DistanceToScreen));
 
             _isVerifying = true;
 

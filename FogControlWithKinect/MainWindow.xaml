@@ -6,6 +6,8 @@
         xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
         xmlns:local="clr-namespace:FogControlWithKinect"
         xmlns:utils="clr-namespace:FogControlWithKinect.Utils"
+        xmlns:enums="clr-namespace:FogControlWithKinect.Enums"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Style="{StaticResource MaterialDesignWindow}"
@@ -22,7 +24,8 @@
         <Style x:Key="Header" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
         </Style>
         <Style x:Key="Status" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -36,6 +39,12 @@
             <Setter Property="Padding" Value="4"/>
             <Setter Property="Margin" Value="4"/>
         </Style>
+
+        <ObjectDataProvider x:Key="MappingMethods" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="enums:MappingMethod"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </Window.Resources>
 
     <Grid IsEnabled="{Binding IsReady}">
@@ -88,11 +97,18 @@
                 Style="{StaticResource VerticalSeparator}">
             <StackPanel>
                 <Label Style="{StaticResource Header}"
-                   Content="Options"/>
+                       Content="Options"/>
                 <StackPanel HorizontalAlignment="Center">
+                    <WrapPanel>
+                        <Label Content="Mapper"/>
+                        <ComboBox ItemsSource="{Binding Source={StaticResource MappingMethods}}"
+                                  SelectedItem="{Binding MappingMethod, Mode=TwoWay}"
+                                  IsEnabled="{Binding IsRunning, Converter={StaticResource Inverted}}"
+                                  Width="84"
+                                  Margin="4,0,0,4"/>
+                    </WrapPanel>
                     <CheckBox Content="Use sounds"
-                              IsChecked="{Binding IsMouseEventSoundEnabled, Mode=TwoWay}"
-                              HorizontalAlignment="Stretch"/>
+                              IsChecked="{Binding IsMouseEventSoundEnabled, Mode=TwoWay}"/>
                 </StackPanel>
             </StackPanel>
         </Border>

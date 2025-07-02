@@ -3,7 +3,7 @@ using System.Media;
 
 namespace FogControlWithKinect.Utils
 {
-    internal static class Sounds
+    internal class Sounds
     {
         public static SoundPlayer CalibPointDone { get; }
         public static SoundPlayer In { get; }
@@ -25,14 +25,11 @@ namespace FogControlWithKinect.Utils
             try
             {
                 sound = new SoundPlayer($"Assets/Sounds/{name}.wav");
-                sound.LoadAsync();
+                sound.Load();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[ERROR] Failed to load sound file '{name}.wav': {ex.Message}");
-            }
-            finally
-            {
+                System.Diagnostics.Debug.WriteLine($"[ERROR] Failed to load the sound file '{name}.wav': {ex.Message}");
                 sound = new SoundPlayer();
             }
 
