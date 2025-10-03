@@ -10,7 +10,7 @@ namespace FogScreenControl.Services.Mappers
         public void Configure(ScreenPoint[] screenPoints, SpacePoint[] spacePoints)
         {
             if (spacePoints.Length < 4 || spacePoints.Length != screenPoints.Length)
-                throw new ArgumentException("At least 4 point correspondences are required.");
+                throw new ArgumentException("At least 4 calibration points are required.");
 
             var screenWidth = screenPoints[1].X - screenPoints[0].X;
             var screenHeight = screenPoints[2].Y - screenPoints[0].Y;
@@ -26,9 +26,6 @@ namespace FogScreenControl.Services.Mappers
             (spacePoint.X - _offsetX) * _scaleX,
             (spacePoint.Y - _offsetY) * _scaleY
         );
-
-        public double GetDistanceFromScreen(SpacePoint spacePoint, double distanceToScreen) =>
-            spacePoint.Z - distanceToScreen;
 
         // Internal
 

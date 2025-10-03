@@ -66,10 +66,10 @@ namespace FogScreenControl
 
         public double DistanceToScreen
         {
-            get => _mappingService?.DistanceToScreen ?? 0;
+            get => _mappingService?.TrackerToScreenDistance ?? 0;
             set
             {
-                _mappingService.DistanceToScreen = value;
+                _mappingService.TrackerToScreenDistance = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DistanceToScreen)));
             }
         }
@@ -163,7 +163,7 @@ namespace FogScreenControl
         {
             _mouseController = new MouseController(
                 InterationMethod.Move,
-                new MappingService(_mappingService.Method, _calibrationService.SpacePoints, _mappingService.DistanceToScreen));
+                new MappingService(_mappingService.Method, _calibrationService.SpacePoints, _mappingService.TrackerToScreenDistance));
 
             _isVerifying = true;
 

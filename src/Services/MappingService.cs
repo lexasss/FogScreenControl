@@ -13,7 +13,7 @@ namespace FogScreenControl.Services
         /// <summary>
         /// Distance between the tracking camera and the fog screen in meters.
         /// </summary>
-        public double DistanceToScreen { get; set; } = 2.15;
+        public double TrackerToScreenDistance { get; set; } = 2.15;
 
         public MappingMethod Method => _mapper.Method;
 
@@ -42,9 +42,9 @@ namespace FogScreenControl.Services
             }
         }
 
-        public MappingService(MappingMethod method, SpacePoint[] spacePoints, double distanceToScreen) : this(method)
+        public MappingService(MappingMethod method, SpacePoint[] spacePoints, double trackerToScreenDistance) : this(method)
         {
-            DistanceToScreen = distanceToScreen;
+            TrackerToScreenDistance = trackerToScreenDistance;
 
             var screenPoints = CalibrationService.GetScreenPoints(spacePoints.Length);
             _mapper.Configure(screenPoints, spacePoints);
@@ -62,9 +62,9 @@ namespace FogScreenControl.Services
             return _mapper.Map(cameraPoint);
         }
 
-        public bool IsInFog(SpacePoint spacePoint) => _mapper.GetDistanceFromScreen(spacePoint, DistanceToScreen) < 0;
+        public bool IsHandInsideFog(SpacePoint spacePoint) => GetHandToScreenDistance(spacePoint) < 0;
 
-        public double GetDistanceFromScreen(SpacePoint point) => _mapper.GetDistanceFromScreen(point, DistanceToScreen);
+        public double GetHandToScreenDistance(SpacePoint spacePoint) => spacePoint.Z - TrackerToScreenDistance;
 
 
         // Internal
@@ -90,9 +90,9 @@ namespace FogScreenControl.Services
                     {
                         screenPoints.Add(new ScreenPoint(double.Parse(p[0]), double.Parse(p[1])));
                     }
-                    else if (line.Length > 0 && double.TryParse(line, out double distanceToScreen)) // distance to screen
+                    else if (line.Length > 0 && double.TryParse(line, out double trackerToScreenDistance)) // Kinect-to-screen distance
                     {
-                        DistanceToScreen = distanceToScreen;
+                        TrackerToScreenDistance = trackerToScreenDistance;
                     }
                 }
             }
