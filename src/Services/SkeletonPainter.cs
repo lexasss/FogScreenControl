@@ -3,6 +3,7 @@ using FogScreenControl.Models;
 using FogScreenControl.Tracker;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Media;
 
 namespace FogScreenControl.Services
@@ -43,6 +44,8 @@ namespace FogScreenControl.Services
 
         public void Draw(Body[] bodies, Func<SpacePoint, ScreenPoint> mapPoint)
         {
+            Body closestBody = GetClosestBody(bodies);
+
             using (DrawingContext dc = _drawingGroup.Open())
             {
                 // Clear the background
@@ -59,8 +62,8 @@ namespace FogScreenControl.Services
 
                     foreach (var joint in body.Joints)
                     {
-                        // sometimes the depth(Z) of an inferred joint may show as negative
-                        // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
+                        // Sometimes the depth(Z) of an inferred joint may show as negative.
+                        // Clamp down to 0.1f to prevent the coordinate mapper from returning (-Infinity, -Infinity)
                         SpacePoint position = joint.Value.Position;
                         if (position.Z < 0)
                         {
@@ -74,10 +77,13 @@ namespace FogScreenControl.Services
                     Pen drawPen = _bodyColors[penIndex++];
                     DrawBody(body.Joints, screenJointPoints, dc, drawPen);
 
-                    var handTipJointType = Joint.HandToJointType(Hand);
-                    var spacePoint = body.Joints[handTipJointType].Position;
+                    if (closestBody == null || body == closestBody)
+                    {
+                        var handTipJointType = Joint.HandToJointType(Hand);
+                        var spacePoint = body.Joints[handTipJointType].Position;
 
-                    DrawHand(screenJointPoints[handTipJointType], spacePoint, dc);
+                        DrawHand(screenJointPoints[handTipJointType], spacePoint, dc);
+                    }
                 }
 
                 // prevent drawing outside of our render area
@@ -157,6 +163,29 @@ namespace FogScreenControl.Services
         readonly int _displayHeight;
         readonly int _displayWidth;
         readonly System.Windows.Rect _rect;
+
+        private Body GetClosestBody(Body[] bodies)
+        {
+            Body closestBody = null;
+            double closestDistance = double.MaxValue;
+
+            foreach (var body in bodies.Where(b => b.IsTracked))
+            {
+                var handTipJointType = Joint.HandToJointType(Hand);
+                var tipJoint = body.Joints[handTipJointType];
+                if (tipJoint.TrackingState == TrackingState.NotTracked)
+                    continue;
+
+                var distance = tipJoint.Position.Z;
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestBody = body;
+                }
+            }
+
+            return closestBody;
+        }
 
         /// <summary>
         /// Draws a body

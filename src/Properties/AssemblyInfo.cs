@@ -10,7 +10,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tampere University")]
 [assembly: AssemblyProduct("FogScreenControl")]
-[assembly: AssemblyCopyright("Oleg Spakov © 2025")]
+[assembly: AssemblyCopyright("Oleg Špakov © 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

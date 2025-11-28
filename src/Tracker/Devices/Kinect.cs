@@ -3,6 +3,7 @@ using FogScreenControl.Models;
 using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 
 namespace FogScreenControl.TrackingDevices
@@ -16,7 +17,7 @@ namespace FogScreenControl.TrackingDevices
 
         public KinectSensor Sensor => _kinectSensor;
 
-        public event EventHandler<Tracker.TipLocationChangedEventArgs> TipLocationChanged;
+        public event EventHandler<Tracker.TipLocationChangedEventArgs> TipLocationChanged; // fires only for the closest body
         public event EventHandler<Tracker.FrameArrivedEventArgs> FrameArrived;
 
         public Kinect()
@@ -74,10 +75,35 @@ namespace FogScreenControl.TrackingDevices
 
         bool _isRunning = false;
 
-        JointType _pointingJointType = JointType.HandTipLeft;
+        JointType _pointingJointType = JointType.HandTipRight;
 
         Body[] _bodies = null;
 
+        private Body GetClosestBody(Body[] bodies)
+        {
+            Body closestBody = null;
+            double closestDistance = double.MaxValue;
+
+            foreach (var body in bodies.Where(b => b.IsTracked))
+            {
+                IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+
+                var jointPoints = new Dictionary<JointType, Point>();
+
+                var tipJoint = joints[_pointingJointType];
+                if (tipJoint.TrackingState == TrackingState.NotTracked)
+                    continue;
+
+                var distance = tipJoint.Position.Z;
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestBody = body;
+                }
+            }
+
+            return closestBody;
+        }
 
         private void OnFrameArrived(object sender, BodyFrameArrivedEventArgs e)
         {
@@ -104,9 +130,11 @@ namespace FogScreenControl.TrackingDevices
             {
                 if (_isRunning)
                 {
+                    Body closestBody = GetClosestBody(_bodies);
+
                     foreach (Body body in _bodies)
                     {
-                        if (!body.IsTracked)
+                        if (!body.IsTracked || (closestBody != null && body != closestBody))
                             continue;
 
                         IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
@@ -118,8 +146,8 @@ namespace FogScreenControl.TrackingDevices
                         if (tipJoint.TrackingState == TrackingState.NotTracked)
                             continue;
 
-                        // sometimes the depth(Z) of an inferred joint may show as negative
-                        // clamp down to 0.1f to prevent coordinatemapper from returning (-Infinity, -Infinity)
+                        // Sometimes the depth(Z) of an inferred joint may show as negative.
+                        // Clamp down to 0.1f to prevent the coordinate mapper from returning (-Infinity, -Infinity)
                         CameraSpacePoint position = tipJoint.Position;
                         if (position.Z < 0)
                         {
