@@ -238,10 +238,10 @@ namespace FogScreenControl.Services
             if (MappingService != null)
             {
                 double size = Math.Min(HandSize,
-                    Math.Abs(MappingService.GetDistanceFromScreen(spacePoint)) * HandSizeScale + 5
+                    Math.Abs(MappingService.GetHandToScreenDistance(spacePoint)) * HandSizeScale + 5
                 );
 
-                Brush brush = MappingService.IsInFog(spacePoint) ? _handInsideBrush: _handOutsideBrush;
+                Brush brush = MappingService.IsHandInsideFog(spacePoint) ? _handInsideBrush: _handOutsideBrush;
                 drawingContext.DrawEllipse(brush, null, center, size, size);
             }
             else

@@ -43,7 +43,7 @@ namespace FogScreenControl.Services
                     writer.WriteLine($"{spacePoint.X} {spacePoint.Y} {spacePoint.Z}");
                 }
 
-                writer.WriteLine(_mapper.DistanceToScreen);
+                writer.WriteLine(_mapper.TrackerToScreenDistance);
 
                 ScreenPoint[] screenPoints = GetScreenPoints(_spacePoints.Count);
                 foreach (var screenPoint in screenPoints)
@@ -69,8 +69,8 @@ namespace FogScreenControl.Services
 
             Event result = Event.None;
 
-            // stop if the distance exceed the threshold
-            if (!_mapper.IsInFog(spacePoint))
+            // stop if the distance exceeds the threshold
+            if (!_mapper.IsHandInsideFog(spacePoint))
             {
                 if (_calibPointIndex == _pointCount) // done
                 {

@@ -7,6 +7,5 @@ namespace FogScreenControl.Services.Mappers
         Enums.MappingMethod Method { get; }
         void Configure(ScreenPoint[] screenPoints, SpacePoint[] spacePoints);
         ScreenPoint Map(SpacePoint spacePoint);
-        double GetDistanceFromScreen(SpacePoint spacePoint, double distanceToScreen);
     }
 }

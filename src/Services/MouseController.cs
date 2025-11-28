@@ -18,7 +18,7 @@ namespace FogScreenControl.Services
             double depth = App.DepthSmoother.Filter(spacePoint.Z);
             spacePoint = new SpacePoint(spacePoint.X, spacePoint.Y, depth);
 
-            if (_mapper.IsInFog(spacePoint))
+            if (_mapper.IsHandInsideFog(spacePoint))
             {
                 var screenPoint = _mapper.Map(spacePoint);
                 var (x, y) = App.PointSmoother.Filter(screenPoint.X, screenPoint.Y);
@@ -26,7 +26,7 @@ namespace FogScreenControl.Services
             }
             else
             {
-                LeaveFog(_mapper.DistanceToScreen - depth);
+                LeaveFog(_mapper.TrackerToScreenDistance - depth);
                 App.PointSmoother.Reset();
             }
         }
