@@ -91,6 +91,9 @@
       <HintPath>..\packages\Microsoft.Xaml.Behaviors.Wpf.1.1.39\lib\net45\Microsoft.Xaml.Behaviors.dll</HintPath>
     </Reference>
     <Reference Include="netstandard" />
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -119,6 +122,7 @@
     <Compile Include="Enums\InteractionMethod.cs" />
     <Compile Include="Enums\MappingMethod.cs" />
     <Compile Include="Enums\TrackerType.cs" />
+    <Compile Include="Models\CalibrationData.cs" />
     <Compile Include="Models\ScreenPoint.cs" />
     <Compile Include="Models\SpacePoint.cs" />
     <Compile Include="Tracker\Body.cs" />

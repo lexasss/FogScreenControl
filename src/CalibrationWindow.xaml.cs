@@ -1,4 +1,5 @@
-﻿using DevExpress.Mvvm;
+﻿using DevExpress.Internal.WinApi.Windows.UI.Notifications;
+using DevExpress.Mvvm;
 using FogScreenControl.Enums;
 using FogScreenControl.Services;
 using System;
@@ -174,6 +175,45 @@ namespace FogScreenControl
             return result == MessageBoxResult.Yes;
         }
 
+        private void HandleCalibrationEvent(CalibrationService.Event? calibEvent)
+        {
+            if (calibEvent == CalibrationService.Event.PointStart)
+            {
+            }
+            else if (calibEvent == CalibrationService.Event.PointEnd)
+            {
+                Utils.Sounds.CalibPointDone.Play();
+
+                CalibrationPoint = ++_calibPointIndex < CalibrationPointCount
+                    ? _calibrationPoints[_calibPointIndex]
+                    : CalibrationPoint.Undefined;
+            }
+            else if (calibEvent == CalibrationService.Event.Finished)
+            {
+                try
+                {
+                    if (VerifyCalibration())
+                    {
+                        _calibrationService?.SaveToFile(App.CalibrationFileName);
+                        MessageBox.Show("Calibration data saved scucessfully.", "Calibration Verification", MessageBoxButton.OK, MessageBoxImage.Information);
+                        DialogResult = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to save calibration data: {ex.Message}", "Calibration Verification", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                IsCalibrating = false;
+
+                _handTipService.Stop();
+
+                _calibrationService = null;
+            }
+        }
+
+        // UI events
+
         private void HandTipService_TipLocationChanged(object sender, Tracker.TipLocationChangedEventArgs e)
         {
             if (_calibrationService == null)
@@ -188,41 +228,8 @@ namespace FogScreenControl
                 else
                 {
                     var cameraPoint = e.Location;
-                    var result = _calibrationService?.Feed(cameraPoint);
-
-                    if (result == CalibrationService.Event.PointStart)
-                    {
-                    }
-                    else if (result == CalibrationService.Event.PointEnd)
-                    {
-                        Utils.Sounds.CalibPointDone.Play();
-
-                        CalibrationPoint = ++_calibPointIndex < CalibrationPointCount
-                            ? _calibrationPoints[_calibPointIndex]
-                            : CalibrationPoint.Undefined;
-                    }
-                    else if (result == CalibrationService.Event.Finished)
-                    {
-                        try
-                        {
-                            if (VerifyCalibration())
-                            {
-                                _calibrationService?.SaveToFile(App.CalibrationFileName);
-                                MessageBox.Show("Calibration data saved scucessfully.", "Calibration Verification", MessageBoxButton.OK, MessageBoxImage.Information);
-                                DialogResult = true;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"Failed to save calibration data: {ex.Message}", "Calibration Verification", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
-
-                        IsCalibrating = false;
-
-                        _handTipService.Stop();
-
-                        _calibrationService = null;
-                    }
+                    var calibEvent = _calibrationService?.Feed(cameraPoint);
+                    HandleCalibrationEvent(calibEvent);
                 }
             });
 

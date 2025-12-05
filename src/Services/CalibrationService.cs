@@ -36,20 +36,33 @@ namespace FogScreenControl.Services
 
         public void SaveToFile(string filename)
         {
-            using (var writer = new StreamWriter(filename))
+            switch (Path.GetExtension(filename))
             {
-                foreach (var spacePoint in _spacePoints)
-                {
-                    writer.WriteLine($"{spacePoint.X} {spacePoint.Y} {spacePoint.Z}");
-                }
+                case ".txt":
+                    using (var calibFile = new StreamWriter(filename))
+                        SaveToTxt(calibFile);
+                    break;
+                case ".json":
+                    using (var calibFile = new StreamWriter(filename))
+                        SaveToJson(calibFile);
+                    break;
+                default:
+                    throw new NotSupportedException("Unsupported calibration file format.");
+            }
+        }
 
-                writer.WriteLine(_mapper.TrackerToScreenDistance);
-
-                ScreenPoint[] screenPoints = GetScreenPoints(_spacePoints.Count);
-                foreach (var screenPoint in screenPoints)
-                {
-                    writer.WriteLine($"{screenPoint.X} {screenPoint.Y}");
-                }
+        public static CalibrationData LoadFromFile(string filename)
+        {
+            switch (Path.GetExtension(filename))
+            {
+                case ".txt":
+                    using (var calibFile = new StreamReader(filename))
+                        return LoadFromTxt(calibFile);
+                case ".json":
+                    using (var calibFile = new StreamReader(filename))
+                        return LoadFromJson(calibFile);
+                default:
+                    throw new NotSupportedException("Unsupported calibration file format.");
             }
         }
 
@@ -67,65 +80,18 @@ namespace FogScreenControl.Services
                 return Event.Started;
             }
 
-            Event result = Event.None;
-
             // stop if the distance exceeds the threshold
             if (!_mapper.IsHandInsideFog(spacePoint))
             {
-                if (_calibPointIndex == _pointCount) // done
-                {
-                    _state = State.Completed;
-                    result = Event.Finished;
-                }
-                else    // we are still calibrating, the current calibration point buffer must be empty, 
-                        // i.e. we reset the buffer if the finger is out while having too few points in the buffer
-                {
-                    if (_state == State.Calibrating)
-                    {
-                        _state = State.Off;
-                        result = Event.PointAbort;
-                    }
-                    _sampleIndex = 0;
-                }
-
-                return result;
+                return GetEventOutsideFog();
             }
 
             if (_calibPointIndex < _pointCount)
             {
-                // stop if the too close to the last calibrated point
-                if (_state == State.Off && _calibPointIndex > 0)
-                {
-                    double distToPrevPoint = spacePoint.DistanceToXY(_spacePoints[_calibPointIndex - 1]);
-                    if (distToPrevPoint < SAFETY_ZONE_RADIUS)
-                        return result;
-                }
-
-                // we are in the point calibration zone
-                if (_state != State.Calibrating)
-                    result = Event.PointStart;
-
-                _state = State.Calibrating;
-
-                // add the sample
-                _samplesX[_sampleIndex] = spacePoint.X;
-                _samplesY[_sampleIndex] = spacePoint.Y;
-                _samplesZ[_sampleIndex] = spacePoint.Z;
-                _sampleIndex++;
-
-                if (_sampleIndex == CALIBRATOR_SAMPLES_PER_POINT)
-                {
-                    _spacePoints.Add(new SpacePoint(_samplesX.Median(), _samplesY.Median(), _samplesZ.Median()));
-
-                    // get ready for the next point
-                    _sampleIndex = 0;
-                    _calibPointIndex++;
-                    _state = State.Off;
-                    result = Event.PointEnd;
-                }
+                return GetEventInsideFog(spacePoint);
             }
 
-            return result;
+            return Event.None;
         }
 
 
@@ -177,6 +143,144 @@ namespace FogScreenControl.Services
             _calibrationPointsList.Add(4, new[] { topLeft, topRight, bottomLeft, bottomRight });
             _calibrationPointsList.Add(5, new[] { topLeft, topRight, bottomLeft, bottomRight, center });
             _calibrationPointsList.Add(9, new[] { topLeft, topRight, bottomLeft, bottomRight, center, topCenter, leftCenter, rightCenter, bottomCenter });
+        }
+
+        private Event GetEventOutsideFog()
+        {
+            Event result = Event.None;
+            if (_calibPointIndex == _pointCount) // done
+            {
+                _state = State.Completed;
+                result = Event.Finished;
+            }
+            else    // we are still calibrating, the current calibration point buffer must be empty, 
+                    // i.e. we reset the buffer if the finger is out while having too few points in the buffer
+            {
+                if (_state == State.Calibrating)
+                {
+                    _state = State.Off;
+                    result = Event.PointAbort;
+                }
+                _sampleIndex = 0;
+            }
+
+            return result;
+        }
+
+        private Event GetEventInsideFog(SpacePoint spacePoint)
+        {
+            Event result = Event.None;
+
+            if (_state == State.Off && _calibPointIndex > 0)
+            {
+                double distToPrevPoint = spacePoint.DistanceToXY(_spacePoints[_calibPointIndex - 1]);
+                if (distToPrevPoint < SAFETY_ZONE_RADIUS)
+                    return result;      // stop if the point is too close to the last calibrated point
+            }
+
+            // we are in the point calibration zone
+            if (_state != State.Calibrating)
+                result = Event.PointStart;
+
+            _state = State.Calibrating;
+
+            // add the sample
+            _samplesX[_sampleIndex] = spacePoint.X;
+            _samplesY[_sampleIndex] = spacePoint.Y;
+            _samplesZ[_sampleIndex] = spacePoint.Z;
+            _sampleIndex++;
+
+            if (_sampleIndex == CALIBRATOR_SAMPLES_PER_POINT)
+            {
+                _spacePoints.Add(new SpacePoint(_samplesX.Median(), _samplesY.Median(), _samplesZ.Median()));
+
+                // get ready for the next point
+                _sampleIndex = 0;
+                _calibPointIndex++;
+                _state = State.Off;
+                result = Event.PointEnd;
+            }
+
+            return result;
+        }
+
+        private void SaveToTxt(StreamWriter calibFile)
+        {
+            foreach (var spacePoint in _spacePoints)
+            {
+                calibFile.WriteLine($"{spacePoint.X} {spacePoint.Y} {spacePoint.Z}");
+            }
+
+            ScreenPoint[] screenPoints = GetScreenPoints(_spacePoints.Count);
+            foreach (var screenPoint in screenPoints)
+            {
+                calibFile.WriteLine($"{screenPoint.X} {screenPoint.Y}");
+            }
+
+            calibFile.WriteLine(_mapper.TrackerToScreenDistance);
+        }
+
+        private static CalibrationData LoadFromTxt(StreamReader calibFile)
+        {
+            var spacePoints = new List<SpacePoint>();
+            var screenPoints = new List<ScreenPoint>();
+            double trackerToScreenDistance = 2;
+
+            while (!calibFile.EndOfStream)
+            {
+                var line = calibFile.ReadLine();
+                var p = line?.Split(' ');
+                if (p?.Length == 3) // tracker points
+                {
+                    spacePoints.Add(new SpacePoint(
+                        double.Parse(p[0]),
+                        double.Parse(p[1]),
+                        double.Parse(p[2])));
+                }
+                else if (p?.Length == 2)    // screen points
+                {
+                    screenPoints.Add(new ScreenPoint(
+                        double.Parse(p[0]),
+                        double.Parse(p[1])));
+                }
+                else if (line.Length > 0 && double.TryParse(line, out double value)) // Kinect-to-screen distance
+                {
+                    trackerToScreenDistance = value;
+                }
+            }
+
+            var screenPointArray = screenPoints.ToArray();
+            if (screenPointArray.Length < 4)
+            {
+                screenPointArray = GetScreenPoints(screenPoints.Count);
+            }
+
+            return new CalibrationData() {
+                ScreenPoints = screenPointArray,
+                SpacePoints = spacePoints.ToArray(),
+                TrackerToScreenDistance = trackerToScreenDistance
+            };
+        }
+
+        private void SaveToJson(StreamWriter calibFile)
+        {
+            var writer = new Newtonsoft.Json.JsonTextWriter(calibFile) { Formatting = Newtonsoft.Json.Formatting.Indented };
+            var serializer = Newtonsoft.Json.JsonSerializer.Create();
+            var calibData = new CalibrationData()
+            {
+                SpacePoints = _spacePoints.ToArray(),
+                ScreenPoints = GetScreenPoints(_spacePoints.Count),
+                TrackerToScreenDistance = _mapper.TrackerToScreenDistance
+            };
+            serializer.Serialize(writer, calibData);
+            writer.Flush();
+        }
+
+        private static CalibrationData LoadFromJson(StreamReader calibFile)
+        {
+            var reader = new Newtonsoft.Json.JsonTextReader(calibFile);
+            var serializer = Newtonsoft.Json.JsonSerializer.Create();
+            return serializer.Deserialize<CalibrationData>(reader);
         }
     }
 }

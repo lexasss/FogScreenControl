@@ -1,8 +1,6 @@
 ﻿using FogScreenControl.Enums;
 using FogScreenControl.Models;
 using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace FogScreenControl.Services
 {
@@ -33,7 +31,13 @@ namespace FogScreenControl.Services
         {
             try
             {
-                LoadFromFile(calibFileName);
+                CalibrationData calibData = CalibrationService.LoadFromFile(calibFileName);
+                if (calibData.IsValid)
+                {
+                    _mapper.Configure(calibData.ScreenPoints, calibData.SpacePoints);
+                    TrackerToScreenDistance = calibData.TrackerToScreenDistance;
+                    IsReady = true;
+                }
             }
             catch (Exception ex)
             {
@@ -70,47 +74,5 @@ namespace FogScreenControl.Services
         // Internal
 
         readonly Mappers.IMapper _mapper;
-
-        private void LoadFromFile(string calibFileName)
-        {
-            var spacePoints = new List<SpacePoint>();
-            var screenPoints = new List<ScreenPoint>();
-
-            using (var calibFile = new StreamReader(calibFileName))
-            {
-                while (!calibFile.EndOfStream)
-                {
-                    var line = calibFile.ReadLine();
-                    var p = line?.Split(' ');
-                    if (p?.Length == 3) // tracker points
-                    {
-                        spacePoints.Add(new SpacePoint(double.Parse(p[0]), double.Parse(p[1]), double.Parse(p[2])));
-                    }
-                    else if (p?.Length == 2)    // screen points
-                    {
-                        screenPoints.Add(new ScreenPoint(double.Parse(p[0]), double.Parse(p[1])));
-                    }
-                    else if (line.Length > 0 && double.TryParse(line, out double trackerToScreenDistance)) // Kinect-to-screen distance
-                    {
-                        TrackerToScreenDistance = trackerToScreenDistance;
-                    }
-                }
-            }
-
-            if (spacePoints.Count < 4)
-            {
-                return;
-            }
-
-            var screenPointArray = screenPoints.ToArray();
-            if (screenPointArray.Length < 4)
-            {
-                screenPointArray = CalibrationService.GetScreenPoints(screenPoints.Count);
-            }
-
-            _mapper.Configure(screenPointArray, spacePoints.ToArray());
-
-            IsReady = true;
-        }
     }
 }

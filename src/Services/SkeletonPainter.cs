@@ -54,36 +54,8 @@ namespace FogScreenControl.Services
                 int penIndex = 0;
                 foreach (Body body in bodies)
                 {
-                    if (!body.IsTracked)
-                        continue;
-
-                    // Joint points on the screen
-                    var screenJointPoints = new Dictionary<JointType, ScreenPoint>();
-
-                    foreach (var joint in body.Joints)
-                    {
-                        // Sometimes the depth(Z) of an inferred joint may show as negative.
-                        // Clamp down to 0.1f to prevent the coordinate mapper from returning (-Infinity, -Infinity)
-                        SpacePoint position = joint.Value.Position;
-                        if (position.Z < 0)
-                        {
-                            position.Z = InferredZPositionClamp;
-                        }
-
-                        ScreenPoint depthSpacePoint = mapPoint(position);
-                        screenJointPoints[joint.Key] = new ScreenPoint(depthSpacePoint.X, depthSpacePoint.Y);
-                    }
-
-                    Pen drawPen = _bodyColors[penIndex++];
-                    DrawBody(body.Joints, screenJointPoints, dc, drawPen);
-
-                    if (closestBody == null || body == closestBody)
-                    {
-                        var handTipJointType = Joint.HandToJointType(Hand);
-                        var spacePoint = body.Joints[handTipJointType].Position;
-
-                        DrawHand(screenJointPoints[handTipJointType], spacePoint, dc);
-                    }
+                    var canDrawHandBall = closestBody == null || body == closestBody;
+                    DrawBody(dc, body, canDrawHandBall, _bodyColors[penIndex++], mapPoint);
                 }
 
                 // prevent drawing outside of our render area
@@ -187,20 +159,59 @@ namespace FogScreenControl.Services
             return closestBody;
         }
 
+        private void DrawBody(DrawingContext dc,
+            Body body,
+            bool canDrawHandBall,
+            Pen drawingPen, 
+            Func<SpacePoint, ScreenPoint> mapPoint)
+        {
+            if (!body.IsTracked)
+                return;
+
+            // Joint points on the screen
+            var screenJointPoints = new Dictionary<JointType, ScreenPoint>();
+
+            foreach (var joint in body.Joints)
+            {
+                // Sometimes the depth(Z) of an inferred joint may show as negative.
+                // Clamp down to 0.1f to prevent the coordinate mapper from returning (-Infinity, -Infinity)
+                SpacePoint position = joint.Value.Position;
+                if (position.Z < 0)
+                {
+                    position.Z = InferredZPositionClamp;
+                }
+
+                ScreenPoint depthSpacePoint = mapPoint(position);
+                screenJointPoints[joint.Key] = new ScreenPoint(depthSpacePoint.X, depthSpacePoint.Y);
+            }
+
+            DrawJoints(dc, body.Joints, screenJointPoints, drawingPen);
+
+            if (canDrawHandBall)
+            {
+                var handTipJointType = Joint.HandToJointType(Hand);
+                var spacePoint = body.Joints[handTipJointType].Position;
+
+                DrawHand(dc, screenJointPoints[handTipJointType], spacePoint);
+            }
+        }
+
         /// <summary>
         /// Draws a body
         /// </summary>
+        /// <param name="dc">drawing context to draw to</param>
         /// <param name="joints">joints to draw</param>
         /// <param name="jointPoints">translated positions of joints to draw</param>
-        /// <param name="drawingContext">drawing context to draw to</param>
         /// <param name="drawingPen">specifies color to draw a specific body</param>
-        private void DrawBody(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, ScreenPoint> jointPoints,
-            DrawingContext drawingContext, Pen drawingPen)
+        private void DrawJoints(DrawingContext dc,
+            IReadOnlyDictionary<JointType, Joint> joints, 
+            IDictionary<JointType, ScreenPoint> jointPoints,
+            Pen drawingPen)
         {
             // Draw the bones
             foreach (var bone in _bones)
             {
-                DrawBone(joints, jointPoints, bone.StartJoint, bone.EndJoint, drawingContext, drawingPen);
+                DrawBone(dc, joints, jointPoints, bone.StartJoint, bone.EndJoint, drawingPen);
             }
 
             // Draw the joints
@@ -226,12 +237,12 @@ namespace FogScreenControl.Services
                 if (drawBrush != null)
                 {
                     var center = new System.Windows.Point(jointPoints[jointType].X, jointPoints[jointType].Y);
-                    drawingContext.DrawEllipse(drawBrush, null, center, JointThickness, JointThickness);
+                    dc.DrawEllipse(drawBrush, null, center, JointThickness, JointThickness);
                 }
             }
         }
 
-        private void DrawHand(ScreenPoint handPosition, SpacePoint spacePoint, DrawingContext drawingContext)
+        private void DrawHand(DrawingContext dc, ScreenPoint handPosition, SpacePoint spacePoint)
         {
             var center = new System.Windows.Point(handPosition.X, handPosition.Y);
 
@@ -242,25 +253,28 @@ namespace FogScreenControl.Services
                 );
 
                 Brush brush = MappingService.IsHandInsideFog(spacePoint) ? _handInsideBrush: _handOutsideBrush;
-                drawingContext.DrawEllipse(brush, null, center, size, size);
+                dc.DrawEllipse(brush, null, center, size, size);
             }
             else
             {
-                drawingContext.DrawEllipse(_handOutsideBrush, null, center, HandSize, HandSize);
+                dc.DrawEllipse(_handOutsideBrush, null, center, HandSize, HandSize);
             }
         }
 
         /// <summary>
         /// Draws one bone of a body (joint to joint)
         /// </summary>
+        /// <param name="dc">drawing context to draw to</param>
         /// <param name="joints">joints to draw</param>
         /// <param name="jointPoints">translated positions of joints to draw</param>
         /// <param name="jointType0">first joint of bone to draw</param>
         /// <param name="jointType1">second joint of bone to draw</param>
-        /// <param name="drawingContext">drawing context to draw to</param>
-        /// /// <param name="drawingPen">specifies color to draw a specific bone</param>
-        private void DrawBone(IReadOnlyDictionary<JointType, Joint> joints, IDictionary<JointType, ScreenPoint> jointPoints,
-            JointType jointType0, JointType jointType1, DrawingContext drawingContext, Pen drawingPen)
+        /// <param name="drawingPen">specifies color to draw a specific bone</param>
+        private void DrawBone(DrawingContext dc,
+            IReadOnlyDictionary<JointType, Joint> joints, 
+            IDictionary<JointType, ScreenPoint> jointPoints,
+            JointType jointType0, JointType jointType1,
+            Pen drawingPen)
         {
             Joint joint0 = joints[jointType0];
             Joint joint1 = joints[jointType1];
@@ -281,7 +295,7 @@ namespace FogScreenControl.Services
 
             var from = new System.Windows.Point(jointPoints[jointType0].X, jointPoints[jointType0].Y);
             var to = new System.Windows.Point(jointPoints[jointType1].X, jointPoints[jointType1].Y);
-            drawingContext.DrawLine(drawPen, from, to);
+            dc.DrawLine(drawPen, from, to);
         }
     }
 }

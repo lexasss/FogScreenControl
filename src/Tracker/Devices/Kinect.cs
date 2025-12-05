@@ -86,11 +86,7 @@ namespace FogScreenControl.TrackingDevices
 
             foreach (var body in bodies.Where(b => b.IsTracked))
             {
-                IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
-
-                var jointPoints = new Dictionary<JointType, Point>();
-
-                var tipJoint = joints[_pointingJointType];
+                var tipJoint = body.Joints[_pointingJointType];
                 if (tipJoint.TrackingState == TrackingState.NotTracked)
                     continue;
 
@@ -105,67 +101,74 @@ namespace FogScreenControl.TrackingDevices
             return closestBody;
         }
 
+        private bool HandleBodyFrame(BodyFrame bodyFrame)
+        {
+            if (bodyFrame == null)
+                return false;
+
+            if (_bodies == null)
+            {
+                _bodies = new Body[bodyFrame.BodyCount];
+            }
+
+            // The first time GetAndRefreshBodyData is called, Kinect will allocate each Body in the array.
+            // As long as those body objects are not disposed and not set to null in the array,
+            // those body objects will be re-used.
+            bodyFrame.GetAndRefreshBodyData(_bodies);
+
+            return true;
+        }
+
+        private void ReportTipLocation(Body body)
+        {
+            IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
+
+            // convert the joint points to depth (display) space
+            var jointPoints = new Dictionary<JointType, Point>();
+
+            var tipJoint = joints[_pointingJointType];
+            if (tipJoint.TrackingState == TrackingState.NotTracked)
+                return;
+
+            // Sometimes the depth(Z) of an inferred joint may show as negative.
+            // Clamp down to 0.1f to prevent the coordinate mapper from returning (-Infinity, -Infinity)
+            CameraSpacePoint position = tipJoint.Position;
+            if (position.Z < 0)
+            {
+                position.Z = InferredZPositionClamp;
+            }
+
+            // Not needed, just testing what MapCameraPointToDepthSpace does. Left commented out for now, but later can be used for debugging.
+            /*
+            DepthSpacePoint depthSpacePoint = _coordinateMapper.MapCameraPointToDepthSpace(position);
+            System.Diagnostics.Debug.WriteLine($"Raw Z = {position.Z:F4}, Mapped XY = ({depthSpacePoint.X:F4}, {depthSpacePoint.Y:F4})");
+            */
+
+            TipLocationChanged?.Invoke(this, new Tracker.TipLocationChangedEventArgs(Converters.ToSpacePoint(position)));
+        }
+
         private void OnFrameArrived(object sender, BodyFrameArrivedEventArgs e)
         {
             bool dataReceived = false;
 
             using (BodyFrame bodyFrame = e.FrameReference.AcquireFrame())
             {
-                if (bodyFrame != null)
-                {
-                    if (_bodies == null)
-                    {
-                        _bodies = new Body[bodyFrame.BodyCount];
-                    }
-
-                    // The first time GetAndRefreshBodyData is called, Kinect will allocate each Body in the array.
-                    // As long as those body objects are not disposed and not set to null in the array,
-                    // those body objects will be re-used.
-                    bodyFrame.GetAndRefreshBodyData(_bodies);
-                    dataReceived = true;
-                }
+                dataReceived = HandleBodyFrame(bodyFrame);
             }
 
-            if (dataReceived && _bodies != null)
+            if (!dataReceived || _bodies == null)
+                return;
+
+            if (_isRunning)
             {
-                if (_isRunning)
+                Body closestBody = GetClosestBody(_bodies);
+                if (closestBody != null)
                 {
-                    Body closestBody = GetClosestBody(_bodies);
-
-                    foreach (Body body in _bodies)
-                    {
-                        if (!body.IsTracked || (closestBody != null && body != closestBody))
-                            continue;
-
-                        IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
-
-                        // convert the joint points to depth (display) space
-                        var jointPoints = new Dictionary<JointType, Point>();
-
-                        var tipJoint = joints[_pointingJointType];
-                        if (tipJoint.TrackingState == TrackingState.NotTracked)
-                            continue;
-
-                        // Sometimes the depth(Z) of an inferred joint may show as negative.
-                        // Clamp down to 0.1f to prevent the coordinate mapper from returning (-Infinity, -Infinity)
-                        CameraSpacePoint position = tipJoint.Position;
-                        if (position.Z < 0)
-                        {
-                            position.Z = InferredZPositionClamp;
-                        }
-
-                        // Not needed, just testing what MapCameraPointToDepthSpace does. Left commented out for now, but later can be used for debugging.
-                        /*
-                        DepthSpacePoint depthSpacePoint = _coordinateMapper.MapCameraPointToDepthSpace(position);
-                        System.Diagnostics.Debug.WriteLine($"Raw Z = {position.Z:F4}, Mapped XY = ({depthSpacePoint.X:F4}, {depthSpacePoint.Y:F4})");
-                        */
-
-                        TipLocationChanged?.Invoke(this, new Tracker.TipLocationChangedEventArgs(Converters.ToSpacePoint(position)));
-                    }
+                    ReportTipLocation(closestBody);
                 }
-
-                FrameArrived?.Invoke(this, new Tracker.FrameArrivedEventArgs(Converters.ToBodies(_bodies)));
             }
+
+            FrameArrived?.Invoke(this, new Tracker.FrameArrivedEventArgs(Converters.ToBodies(_bodies)));
         }
     }
 }

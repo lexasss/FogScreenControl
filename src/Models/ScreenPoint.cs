@@ -10,17 +10,13 @@
         /// <summary>
         /// Pixels
         /// </summary>
-        public double X { get; }
+        public double X { get; set; }
         /// <summary>
         /// Pixels
         /// </summary>
-        public double Y { get; }
+        public double Y { get; set; }
 
-        public ScreenPoint()
-        {
-            X = 0;
-            Y = 0;
-        }
+        public ScreenPoint() { }
 
         public ScreenPoint(double x, double y)
         {
