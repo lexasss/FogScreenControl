@@ -6,7 +6,7 @@ namespace FogScreenControl
     {
         public static string CalibrationFileName { get; } = "calibration.json";
 
-        public static Services.LowPassFilter PointSmoother { get; set; } = new Services.LowPassFilter(200, 33);
-        public static Services.LowPassFilter DepthSmoother { get; set; } = new Services.LowPassFilter(70, 33);
+        public static Services.LowPassFilter PointSmoother { get; set; } = new Services.LowPassFilter(FogScreenControl.Properties.Settings.Default.PointingFilterIntensity);
+        public static Services.LowPassFilter DepthSmoother { get; set; } = new Services.LowPassFilter(FogScreenControl.Properties.Settings.Default.DepthFilterIntensity);
     }
 }

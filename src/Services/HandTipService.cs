@@ -8,6 +8,7 @@ namespace FogScreenControl.Services
     public class HandTipService : IDisposable
     {
         public bool IsAvailable => _tracker.IsAvailable;
+        public int SamplingInterval => _tracker.SamplingInterval;
 
         public FrameDescription FrameDescription { get; }
 

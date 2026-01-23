@@ -21,6 +21,17 @@ namespace FogScreenControl
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsHandRight)));
             }
         }
+        public double PointingFilterIntensity
+        {
+            get => App.PointSmoother.Intensity;
+            set
+            {
+                Properties.Settings.Default.PointingFilterIntensity = value;
+                Properties.Settings.Default.Save();
+                App.PointSmoother.Intensity = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PointingFilterIntensity)));
+            }
+        }
         public bool IsClickAndDrag
         {
             get => Properties.Settings.Default.UseClickAndDrop;
@@ -134,6 +145,9 @@ namespace FogScreenControl
             _skeletonPainter = new Services.SkeletonPainter(frameDescription.Width, frameDescription.Height, _hand);
 
             imgSkeleton.Source = _skeletonPainter.ImageSource;
+
+            App.DepthSmoother = new Services.LowPassFilter(App.DepthSmoother.Intensity, _handTipService.SamplingInterval);
+            App.PointSmoother = new Services.LowPassFilter(App.PointSmoother.Intensity, _handTipService.SamplingInterval);
         });
 
         public ICommand ToggleInteractionCommand => new DelegateCommand(() =>

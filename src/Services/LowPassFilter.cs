@@ -5,21 +5,48 @@ namespace FogScreenControl.Services
     public class LowPassFilter
     {
         /// <summary>
+        /// Filtering intensity. Typically in the range [0, 1000].
+        /// Greater values mean more intense filtering
+        /// </summary>
+        public double Intensity
+        {
+            get => _intensity;
+            set
+            {
+                if (value >= 0)
+                {
+                    _intensity = value;
+                    _alpha = _intensity / _interval;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Low pass filter.
+        /// Default constructor: intensity is 0 (thus, no filtering), interval is 50 ms
+        /// </summary>
+        public LowPassFilter()
+        {
+            Init();
+        }
+
+        /// <summary>
         /// Low pass filter
         /// </summary>
-        /// <param name="t">Greater values mean more intense filtering</param>
+        /// <param name="intensity">Greater values mean more intense filtering</param>
         /// <param name="interval">Inter-sample interval in milliseconds</param>
         /// <exception cref="Exception"></exception>
-        public LowPassFilter(double t, double interval)
+        public LowPassFilter(double intensity, double interval = 33)
         {
-            if (t < 0)
-                throw new ArgumentException("Parameters T cannot be negative");
+            if (intensity < 0)
+                throw new ArgumentException("Intensity must be a non-negative value");
             if (interval <= 0)
-                throw new ArgumentException("Interval must be a poitive value in milliseconds");
+                throw new ArgumentException("Interval must be a positive value in milliseconds");
 
-            _alpha = t / interval;
+            _intensity = intensity;
+            _interval = interval;
 
-            Reset();
+            Init();
         }
 
         public void Reset()
@@ -58,9 +85,18 @@ namespace FogScreenControl.Services
 
         // Internal
 
-        readonly double _alpha;
+        double _intensity = 0;
+        double _interval = 33;  // ms
+
+        double _alpha;
 
         double _x;
         double _y;
+
+        private void Init()
+        {
+            _alpha = _intensity / _interval;
+            Reset();
+        }
     }
 }

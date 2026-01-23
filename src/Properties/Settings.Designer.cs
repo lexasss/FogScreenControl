@@ -82,5 +82,29 @@ namespace FogScreenControl.Properties {
                 this["TrackerType"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("200")]
+        public double PointingFilterIntensity {
+            get {
+                return ((double)(this["PointingFilterIntensity"]));
+            }
+            set {
+                this["PointingFilterIntensity"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("70")]
+        public double DepthFilterIntensity {
+            get {
+                return ((double)(this["DepthFilterIntensity"]));
+            }
+            set {
+                this["DepthFilterIntensity"] = value;
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ namespace FogScreenControl.TrackingDevices
         string Name { get; }
         TrackerType TrackerType { get; }
         bool IsAvailable { get; }
+        int SamplingInterval { get; }
 
         ScreenPoint SpaceToPlane(SpacePoint point);
         void Start(Hand hand);

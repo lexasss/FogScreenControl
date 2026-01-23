@@ -98,6 +98,24 @@
                               IsChecked="{Binding IsHandRight}"
                               HorizontalAlignment="Stretch"
                               HorizontalContentAlignment="Center"/>
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0"
+                               Content="Filter:"/>
+                        <Slider Grid.Column="1"
+                                Minimum="0"
+                                Maximum="300"
+                                SmallChange="10"
+                                LargeChange="50"
+                                TickFrequency="50"
+                                TickPlacement="BottomRight"
+                                Value="{Binding PointingFilterIntensity, Mode=TwoWay}"
+                                VerticalAlignment="Center"
+                                Margin="4,0,0,0"/>
+                    </Grid>
                 </StackPanel>
             </Border>
 

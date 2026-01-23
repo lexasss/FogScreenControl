@@ -14,6 +14,7 @@ namespace FogScreenControl.TrackingDevices
         public TrackerType TrackerType => TrackerType.Kinect;
 
         public bool IsAvailable => _kinectSensor.IsAvailable;
+        public int SamplingInterval => 33; // approx 30 FPS
 
         public KinectSensor Sensor => _kinectSensor;
 
