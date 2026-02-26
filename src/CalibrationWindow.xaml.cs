@@ -157,20 +157,20 @@ namespace FogScreenControl
         CalibrationPoint[] _calibrationPoints;
 
         bool _isCalibrating = false;
-        bool _isVerifying = false;
+        bool _isVerifying => _mouseController != null;
+
         int _calibPointIndex = -1;
 
-        public bool VerifyCalibration()
+        private bool VerifyCalibration()
         {
             _mouseController = new MouseController(
                 InterationMethod.Move,
                 new MappingService(_mappingService.Method, _calibrationService.SpacePoints, _mappingService.TrackerToScreenDistance));
 
-            _isVerifying = true;
-
             var result = MessageBox.Show("Is the calibration accurate?", "Calibration Verification", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-            _isVerifying = false;
+            _mouseController.Dispose();
+            _mouseController = null;
 
             return result == MessageBoxResult.Yes;
         }

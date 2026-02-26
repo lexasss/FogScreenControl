@@ -132,17 +132,95 @@ namespace FogScreenControl.Utils
             XBUTTON2 = 0x00000002
         }
 
-        [DllImport("user32.dll")]
-        public static extern int GetSystemMetrics(SystemMetric smIndex);
+        public enum SystemCursorIds : uint
+        {
+            OCR_NORMAL = 32512, // Arrow
+            OCR_IBEAM = 32513, // Text
+            OCR_WAIT = 32514, // Hourglass
+            OCR_CROSS = 32515, // Crosshair
+            OCR_UP = 32516, // Up arrow
+            OCR_HAND = 32649, // Hand
+            OCR_APPSTARTING = 32650, // Arrow + spinner
+                                     // skipping resizing cursors
+        }
+
+        public enum ImageType : uint 
+        {
+            BITMAP = 0,
+            ICON = 1,
+            CURSOR = 2
+        }
+
+        [Flags]
+        public enum CopyImageFlags : uint 
+        {
+            COPYDELETEORG = 0x00000008,
+            COPYFROMRESOURCE = 0x00004000,
+            COPYRETURNORG = 0x00000004,
+            CREATEDIBSECTION = 0x00002000,
+            DEFAULTCOLOR = 0x00000000,
+            DEFAULTSIZE = 0x00000040,
+            MONOCHROME = 0x00000001
+        }
+
+        public enum SetParameterInfoActions : uint
+        {
+            SETCURSORS = 0x0057
+        }
+
+        [Flags]
+        public enum SetParameterInfoFlags : uint
+        {
+            UPDATEINIFILE = 0x01,
+            SENDCHANGE = 0x02
+        }
+
 
         [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool SetCursorPos(int x, int y);
+        public static extern int GetSystemMetrics(SystemMetric smIndex);
 
         [DllImport("user32.dll")]
         public static extern void mouse_event(MouseEventFlags dwFlags, int dx, int dy, uint dwData, UIntPtr dwExtraInfo);
 
         [DllImport("user32.dll")]
         public static extern void mouse_event(MouseEventFlags dwFlags, int dx, int dy, uint dwData, int dwExtraInfo);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetCursorPos(int x, int y);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr LoadCursorFromFile(string lpFileName);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool SetSystemCursor(IntPtr hcur, SystemCursorIds id);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool SystemParametersInfo(SetParameterInfoActions uiAction, uint uiParam, IntPtr pvParam, SetParameterInfoFlags fWinIni);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr CreateIconFromResource(
+            byte[] presbits,
+            uint dwResSize,
+            bool fIcon,
+            uint dwVer);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr CreateIconFromResourceEx(
+            byte[] presbits,
+            uint dwResSize,
+            bool fIcon,
+            uint dwVer,
+            int cxDesired,
+            int cyDesired,
+            uint uFlags);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr CopyImage(
+            IntPtr hImage,
+            ImageType uType,
+            int cxDesired,
+            int cyDesired,
+            CopyImageFlags fuFlags);
     }
 }

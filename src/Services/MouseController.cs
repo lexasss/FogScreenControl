@@ -1,9 +1,10 @@
 ﻿using FogScreenControl.Enums;
 using FogScreenControl.Models;
+using System;
 
 namespace FogScreenControl.Services
 {
-    public class MouseController
+    public class MouseController : IDisposable
     {
         public bool IsPlayingSoundOnMouseEvents { get; set; } = false;
 
@@ -11,6 +12,12 @@ namespace FogScreenControl.Services
         {
             _method = method;
             _mapper = mapper;
+
+            try
+            {
+                CursorManager.SetInteractionCursors();
+            }
+            catch { }
         }
 
         public void SetPosition(SpacePoint spacePoint)
@@ -29,6 +36,11 @@ namespace FogScreenControl.Services
                 LeaveFog(_mapper.TrackerToScreenDistance - depth);
                 App.PointSmoother.Reset();
             }
+        }
+
+        public void Dispose()
+        {
+            CursorManager.RestoreDefaults();
         }
 
         // Internal

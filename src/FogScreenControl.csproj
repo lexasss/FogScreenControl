@@ -125,6 +125,7 @@
     <Compile Include="Models\CalibrationData.cs" />
     <Compile Include="Models\ScreenPoint.cs" />
     <Compile Include="Models\SpacePoint.cs" />
+    <Compile Include="Services\CursorManager.cs" />
     <Compile Include="Tracker\Body.cs" />
     <Compile Include="Tracker\Bone.cs" />
     <Compile Include="Tracker\Devices\Converters.cs" />
@@ -191,6 +192,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Assets\Cursors\crosses.cur">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -201,6 +205,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets\Cursors\cross.cur">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
     <Content Include="Assets\Sounds\out.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -224,6 +231,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\watchdog\CursorWatchdog.csproj">
+      <Project>{7ba8aa2e-0565-4a9f-9730-82115e8411c2}</Project>
+      <Name>CursorWatchdog</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\MaterialDesignThemes.5.2.2-ci998\build\MaterialDesignThemes.targets" Condition="Exists('..\packages\MaterialDesignThemes.5.2.2-ci998\build\MaterialDesignThemes.targets')" />

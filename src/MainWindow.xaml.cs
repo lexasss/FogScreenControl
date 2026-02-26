@@ -181,6 +181,8 @@ namespace FogScreenControl
                 _handTipService?.Stop();
                 _skeletonPainter?.Clear();
                 _skeletonPainter.MappingService = null;
+
+                _mouseController.Dispose();
                 _mouseController = null;
             }
         });
@@ -199,6 +201,17 @@ namespace FogScreenControl
         public MainWindow()
         {
             InitializeComponent();
+            /*
+            Task.Run(async () =>
+            {
+                try
+                {
+                    Services.CursorManager.SetInteractionCursors();
+                    await Task.Delay(10000);
+                    Services.CursorManager.RestoreDefaults();
+                }
+                catch (System.Exception ex) { System.Diagnostics.Debug.WriteLine(ex); };
+            });*/
         }
 
         // Internal

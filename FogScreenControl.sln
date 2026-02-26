@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36202.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FogScreenControl", "src\FogScreenControl.csproj", "{3D708416-7000-41EC-8B81-1745FE594BC9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorWatchdog", "watchdog\CursorWatchdog.csproj", "{7BA8AA2E-0565-4A9F-9730-82115E8411C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{3D708416-7000-41EC-8B81-1745FE594BC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D708416-7000-41EC-8B81-1745FE594BC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D708416-7000-41EC-8B81-1745FE594BC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BA8AA2E-0565-4A9F-9730-82115E8411C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BA8AA2E-0565-4A9F-9730-82115E8411C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BA8AA2E-0565-4A9F-9730-82115E8411C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BA8AA2E-0565-4A9F-9730-82115E8411C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
